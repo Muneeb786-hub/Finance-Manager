@@ -2,15 +2,16 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
-## [0.1.0] - 2026-09-02
+## [0.4.0] - 2026-09-02
 ### Added
-- Milestone 1: Project foundation and scaffolding with Next.js App Router, TypeScript, and Tailwind CSS.
-- NextAuth authentication with credentials provider and bcrypt password hashing.
-- Complete Prisma relational schema covering Users, Accounts, Categories, Transactions, Budgets, Goals, Recurring Transactions, Notifications, and Financial Insights.
-- Public landing page with product features, privacy statement, and educational disclaimer.
-- Sign-in and Sign-up authentication pages with React Hook Form and Zod validation.
-- Responsive application layout with desktop sidebar, mobile navigation, and light/dark theme toggle.
-- Comprehensive technical documentation suite (`README.md`, `docs/architecture.md`, `docs/security.md`, `docs/development.md`, `docs/database.md`, `docs/api.md`).
+- Milestone 4: Category Budgets and Monthly Spending Limits management workflow.
+- Monthly budgets API endpoints (`/api/budgets`, `/api/budgets/[id]`) with live expense calculations, status alerts, and unbudgeted category detection.
+- Fast copy previous month budgets endpoint (`/api/budgets/copy-previous`) for monthly rollover workflows.
+- Dedicated `/budgets` management dashboard with calendar month navigation, summary cards, and responsive budget cards.
+- Real-time spending progress bars with threshold alert badges (`On Track`, `Near Limit`, `Over Budget`).
+- Modal dialogs for setting, editing, and deleting category budgets.
+- Unbudgeted expense warnings identifying spending in categories without configured caps.
+- Comprehensive unit tests for budget schema validation, threshold statuses, and remaining buffer math (`tests/unit/budgets.test.ts`).
 
 ## [0.3.0] - 2026-09-02
 ### Added
@@ -36,3 +37,13 @@ All notable changes to the Personal Finance Manager project will be documented i
 - Dedicated `/transactions` management view with searching, multi-filter panels, multi-column sorting, pagination, and modals.
 - Unit and integration tests for transaction schema validation and decimal cash flow calculations (`tests/unit/transactions.test.ts`).
 - Seed script extension for realistic sample transactions across food, rent, transit, utilities, and income.
+
+## [0.1.0] - 2026-09-02
+### Added
+- Milestone 1: Project foundation and scaffolding with Next.js App Router, TypeScript, and Tailwind CSS.
+- NextAuth authentication with credentials provider and bcrypt password hashing.
+- Complete Prisma relational schema covering Users, Accounts, Categories, Transactions, Budgets, Goals, Recurring Transactions, Notifications, and Financial Insights.
+- Public landing page with product features, privacy statement, and educational disclaimer.
+- Sign-in and Sign-up authentication pages with React Hook Form and Zod validation.
+- Responsive application layout with desktop sidebar, mobile navigation, and light/dark theme toggle.
+- Comprehensive technical documentation suite (`README.md`, `docs/architecture.md`, `docs/security.md`, `docs/development.md`, `docs/database.md`, `docs/api.md`).
