@@ -2,6 +2,16 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.5.0] - 2026-09-03
+### Added
+- Milestone 5: Savings Goals and Financial Milestone Tracking.
+- Savings goals API endpoints (`/api/goals`, `/api/goals/[id]`) with target progress percentages, remaining balances, and estimated monthly required savings paces.
+- Goal contribution and withdrawal ledger API (`/api/goals/[id]/contributions`) with decimal precision math and automatic milestone completion triggers.
+- Dedicated `/goals` management view with active, completed, and all goal filter tabs and summary metrics.
+- Interactive goal cards with target date countdowns, pace recommendations, and quick deposit/withdrawal actions.
+- Contribution history modal displaying chronological deposits and withdrawals.
+- Unit tests verifying savings goal schemas, contribution payloads, withdrawal limits, and pacing calculations (`tests/unit/goals.test.ts`).
+
 ## [0.4.0] - 2026-09-02
 ### Added
 - Milestone 4: Category Budgets and Monthly Spending Limits management workflow.
