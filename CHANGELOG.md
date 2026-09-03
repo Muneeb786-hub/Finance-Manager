@@ -2,6 +2,16 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.6.0] - 2026-09-03
+### Added
+- Milestone 6: Recurring Transactions Scheduler and Cash Flow Automation.
+- Recurring transactions API endpoints (`/api/recurring-transactions`, `/api/recurring-transactions/[id]`) with daily, weekly, monthly, and yearly frequencies.
+- Automated ledger processing endpoint (`/api/recurring-transactions/process`) recording due transactions into the ledger and creating notifications.
+- Normalized monthly recurring cash flow calculations and projected net flow analysis (`src/lib/recurring.ts`).
+- Dedicated `/recurring` management dashboard with active/paused/all tabs, due schedule banners, and 1-click batch processing.
+- Interactive recurring cards with next run date countdowns, status indicators, and pause/resume triggers.
+- Unit tests verifying recurring schemas, date advancement math, and cash flow normalization (`tests/unit/recurring.test.ts`).
+
 ## [0.5.0] - 2026-09-03
 ### Added
 - Milestone 5: Savings Goals and Financial Milestone Tracking.
