@@ -12,6 +12,27 @@ export function Navbar() {
   const { data: session } = useSession()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [unreadCount, setUnreadCount] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!session?.user) return
+
+    const checkUnread = async () => {
+      try {
+        const res = await fetch("/api/notifications?unreadOnly=true")
+        if (res.ok) {
+          const data = await res.json()
+          setUnreadCount(data.unreadCount || 0)
+        }
+      } catch (err) {
+        // silent fail
+      }
+    }
+
+    checkUnread()
+    const interval = setInterval(checkUnread, 60000)
+    return () => clearInterval(interval)
+  }, [session?.user, pathname])
 
   const getPageTitle = (path: string) => {
     if (path.startsWith("/dashboard")) return "Dashboard"
@@ -41,8 +62,11 @@ export function Navbar() {
 
       <div className="flex items-center gap-2">
         <Link href="/notifications">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground">
             <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-primary" />
+            )}
           </Button>
         </Link>
         <ThemeToggle />

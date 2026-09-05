@@ -64,3 +64,9 @@ export const ProfileSettingsSchema = z.object({
   preferredCurrency: z.string().default("USD"),
   timezone: z.string().default("UTC"),
 })
+
+export const NotificationSchema = z.object({
+  type: z.string().min(1, "Notification type is required"),
+  title: z.string().min(1, "Title is required"),
+  message: z.string().min(1, "Message is required"),
+})

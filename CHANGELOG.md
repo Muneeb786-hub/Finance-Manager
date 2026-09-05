@@ -2,6 +2,16 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.8.0] - 2026-09-05
+### Added
+- Milestone 8: Notifications Center and Real-Time Alerts Management.
+- Notifications API collection endpoints (`/api/notifications`, `/api/notifications/[id]`) supporting unread filtering, type categorization, single toggle, bulk mark-as-read, and clearing actions.
+- Notification schema validation for alert payloads (`src/lib/validations.ts`).
+- Dedicated `/notifications` management center with all/unread tabs, search filtering, category tabs (Budget Alerts, Recurring Flows, Goal Milestones, Financial Insights), and empty state views.
+- Interactive notification item cards with relative timestamps, alert type badges, inline read toggling, and deletion controls.
+- Active unread notification indicator badge in the top navigation bar with auto-refresh polling.
+- Unit tests validating notification schema requirements, unread count filtering, and type groupings (`tests/unit/notifications.test.ts`).
+
 ## [0.7.0] - 2026-09-05
 ### Added
 - Milestone 7: Financial Insights, Health Scoring, and Deep-Dive Analytics.
