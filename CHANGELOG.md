@@ -2,6 +2,16 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.7.0] - 2026-09-05
+### Added
+- Milestone 7: Financial Insights, Health Scoring, and Deep-Dive Analytics.
+- Automated server-side financial calculation engine (`src/lib/insights.ts`) computing holistic health scores (0-100), 50/30/20 guideline allocations, month-over-month category variance shifts, and prioritized educational observations.
+- Financial insights API endpoints (`/api/financial-insights`) for real-time evaluations and persistent historical snapshot archiving.
+- Visual financial analytics API endpoint (`/api/analytics`) calculating multi-month cash flow trajectories, payment method distributions, and daily spending velocity.
+- Dedicated `/insights` dashboard with interactive health score circular gauge, 50/30/20 benchmark progress bars, observation alerts, month-over-month comparison table, and snapshot history.
+- Dedicated `/analytics` dashboard with 3, 6, and 12-month timeframe toggles, composed trajectory charts, itemized category progress table, and payment channel distribution.
+- Unit tests verifying financial health scoring algorithms, 50/30/20 allocations, month-over-month variance detection, and period cash flow metrics (`tests/unit/insights.test.ts`, `tests/unit/analytics.test.ts`).
+
 ## [0.6.0] - 2026-09-03
 ### Added
 - Milestone 6: Recurring Transactions Scheduler and Cash Flow Automation.
