@@ -70,3 +70,14 @@ export const NotificationSchema = z.object({
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
 })
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters"),
+})
+
+export const AccountDataWipeSchema = z.object({
+  confirmationPhrase: z.literal("DELETE MY DATA", {
+    errorMap: () => ({ message: 'Please type "DELETE MY DATA" exactly to confirm' }),
+  }),
+})

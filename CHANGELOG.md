@@ -2,6 +2,18 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.9.0] - 2026-09-05
+### Added
+- Milestone 9: User Profile, Accounts & Categories Configuration, and Data Management Settings.
+- User profile & preferences API (`/api/auth/profile`) for display name, base currency (USD, EUR, GBP, CAD, AUD, JPY, PKR, INR), and timezone configuration.
+- Password change API (`/api/auth/change-password`) with bcrypt validation of current credentials and secure hashing.
+- Accounts management endpoints (`/api/accounts/[id]`) for editing account details and safe deletion with transaction unlinking.
+- Categories customization endpoints (`/api/categories/[id]`) with color palette picker and delete guards for system defaults and linked transactions.
+- Data portability and backup export endpoint (`/api/account-data`) delivering a complete JSON archive of all transactions, budgets, goals, and schedules.
+- Double-confirmation account data wipe API (`DELETE /api/account-data`) with strict phrase verification (`DELETE MY DATA`).
+- Dedicated `/settings` dashboard featuring tabbed navigation across Profile & Security, Accounts, Categories, and Data Privacy.
+- Unit tests validating profile schemas, password change constraints, and data wipe double confirmation (`tests/unit/settings.test.ts`).
+
 ## [0.8.0] - 2026-09-05
 ### Added
 - Milestone 8: Notifications Center and Real-Time Alerts Management.
