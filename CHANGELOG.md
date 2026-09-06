@@ -2,6 +2,13 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.11.0] - 2026-09-06
+### Added
+- Milestone 11: End-to-End Integration Test Suite, Web App Manifest & Offline Assets, and API Documentation Finalization.
+- Comprehensive financial lifecycle integration test suite (`tests/integration/flow.test.ts`) covering user registration, multi-account decimal precision cash flows, budget threshold warnings, savings milestones, recurring date advancement, health score evaluations, month-over-month shifts, and double-confirmation data wipe.
+- Next.js 14 App Router web app manifest (`src/app/manifest.ts`) providing PWA installation capabilities, custom theme colors, and standalone window configuration.
+- Completely finalized REST API documentation (`docs/api.md`) indexing all 30+ endpoints across Authentication, Accounts, Categories, Transactions, Budgets, Goals, Recurring Cash Flow, Financial Insights, Analytics, Notifications, Onboarding, and Data Portability.
+
 ## [0.10.0] - 2026-09-06
 ### Added
 - Milestone 10: Guided Setup Tour, First-Time User Onboarding Wizard, and Sandbox Demo Mode.
