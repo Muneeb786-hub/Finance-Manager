@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Lock, Check, AlertCircle } from "lucide-react"
+import { User, Lock, Check, AlertCircle, Eye, EyeOff } from "lucide-react"
 
 interface ProfileSettingsTabProps {
   user: {
@@ -30,6 +30,9 @@ export function ProfileSettingsTab({ user, onProfileUpdated }: ProfileSettingsTa
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showCurrentPass, setShowCurrentPass] = useState(false)
+  const [showNewPass, setShowNewPass] = useState(false)
+  const [showConfirmPass, setShowConfirmPass] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -226,41 +229,74 @@ export function ProfileSettingsTab({ user, onProfileUpdated }: ProfileSettingsTa
 
             <div className="space-y-1.5">
               <Label htmlFor="currentPass" className="text-xs">Current Password</Label>
-              <Input
-                id="currentPass"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                className="h-9 text-xs"
-              />
+              <div className="relative">
+                <Input
+                  id="currentPass"
+                  type={showCurrentPass ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="h-9 text-xs pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPass(!showCurrentPass)}
+                  className="absolute right-0 top-0 h-full px-2.5 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center focus:outline-none"
+                  tabIndex={-1}
+                  aria-label={showCurrentPass ? "Hide password" : "Show password"}
+                >
+                  {showCurrentPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="newPass" className="text-xs">New Password (min 8 chars)</Label>
-                <Input
-                  id="newPass"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  minLength={8}
-                  required
-                  className="h-9 text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    id="newPass"
+                    type={showNewPass ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={8}
+                    required
+                    className="h-9 text-xs pr-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-0 top-0 h-full px-2.5 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center focus:outline-none"
+                    tabIndex={-1}
+                    aria-label={showNewPass ? "Hide password" : "Show password"}
+                  >
+                    {showNewPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="confirmPass" className="text-xs">Confirm New Password</Label>
-                <Input
-                  id="confirmPass"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  minLength={8}
-                  required
-                  className="h-9 text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPass"
+                    type={showConfirmPass ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={8}
+                    required
+                    className="h-9 text-xs pr-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute right-0 top-0 h-full px-2.5 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center focus:outline-none"
+                    tabIndex={-1}
+                    aria-label={showConfirmPass ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </div>
             </div>
 

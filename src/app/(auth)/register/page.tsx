@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Wallet, Loader2, AlertCircle } from "lucide-react"
+import { Wallet, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>
@@ -20,6 +20,7 @@ type RegisterFormValues = z.infer<typeof RegisterSchema>
 export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState(false)
+  const [showPassword, setShowPassword] = React.useState(false)
   const [serverError, setServerError] = React.useState<string | null>(null)
 
   const {
@@ -125,14 +126,30 @@ export default function RegisterPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="At least 8 characters"
-                autoComplete="new-password"
-                disabled={isLoading}
-                {...register("password")}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
+                  disabled={isLoading}
+                  className="pr-10"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center focus:outline-none"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {errors.password && (
                 <p className="text-xs text-destructive">{errors.password.message}</p>
               )}
