@@ -13,6 +13,8 @@ import { QuickActions } from "@/components/dashboard/quick-actions"
 import { TransactionModal } from "@/components/transactions/transaction-modal"
 import { WelcomeBanner } from "@/components/dashboard/welcome-banner"
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard"
+import { PendingSyncBanner } from "@/components/bank-sync/pending-sync-banner"
+import { SimulateSyncModal } from "@/components/bank-sync/simulate-sync-modal"
 import { formatCurrency } from "@/lib/utils"
 import {
   Wallet,
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [isTransactionModalOpen, setIsTransactionModalOpen] = React.useState(false)
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false)
+  const [isSimulateSyncOpen, setIsSimulateSyncOpen] = React.useState(false)
   const [isSeedingDemo, setIsSeedingDemo] = React.useState(false)
 
   const fetchDashboardData = React.useCallback(async () => {
@@ -101,9 +104,15 @@ export default function DashboardPage() {
           >
             <RefreshCw className={`h-4 w-4 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-          <QuickActions onAddTransaction={() => setIsTransactionModalOpen(true)} />
+          <QuickActions
+            onAddTransaction={() => setIsTransactionModalOpen(true)}
+            onSimulateBankSync={() => setIsSimulateSyncOpen(true)}
+          />
         </div>
       </div>
+
+      {/* Pending Bank / Card Sync Transactions Banner */}
+      <PendingSyncBanner onTransactionApproved={fetchDashboardData} />
 
       {/* Welcome & Sandbox Tour Banner */}
       {(!data?.onboardingComplete || data?.totalTransactionsCount === 0) && (
@@ -222,6 +231,13 @@ export default function DashboardPage() {
         }}
         initialName={session?.user?.name || ""}
         initialCurrency={data?.preferredCurrency || "USD"}
+      />
+
+      {/* Simulate Bank / Card Sync Modal */}
+      <SimulateSyncModal
+        isOpen={isSimulateSyncOpen}
+        onClose={() => setIsSimulateSyncOpen(false)}
+        onSyncTriggered={fetchDashboardData}
       />
     </div>
   )

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { TransactionFilters } from "@/components/transactions/transaction-filters"
 import { TransactionModal } from "@/components/transactions/transaction-modal"
 import { DeleteConfirmModal } from "@/components/transactions/delete-confirm-modal"
+import { PendingSyncBanner } from "@/components/bank-sync/pending-sync-banner"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import {
   Plus,
@@ -210,6 +211,9 @@ export default function TransactionsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Pending Bank / Card Sync Transactions Banner */}
+      <PendingSyncBanner onTransactionApproved={fetchTransactions} />
 
       {/* Filter Component */}
       <TransactionFilters
