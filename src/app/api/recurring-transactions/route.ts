@@ -16,7 +16,6 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const statusFilter = searchParams.get("status") || "ALL"
   const isSubscriptionParam = searchParams.get("isSubscription")
-  const subcategoryParam = searchParams.get("subcategory")
 
   try {
     const whereClause: any = { userId }
@@ -27,10 +26,6 @@ export async function GET(req: Request) {
       whereClause.isSubscription = true
     } else if (isSubscriptionParam === "false") {
       whereClause.isSubscription = false
-    }
-
-    if (subcategoryParam && subcategoryParam !== "ALL") {
-      whereClause.subcategory = subcategoryParam
     }
 
     const rawSchedules = await db.recurringTransaction.findMany({
@@ -49,10 +44,6 @@ export async function GET(req: Request) {
     let pausedCount = 0
     let dueCount = 0
 
-    // Subscription specific analytics
-    let monthlySubscriptionTotal = 0
-    const subcategorySpendMap: Record<string, { totalMonthly: number; count: number }> = {}
-
     const schedules = rawSchedules.map((item) => {
       const isDue = item.isActive && new Date(item.nextRunDate) <= now
       const isExpired = item.endDate ? new Date(item.endDate) < now : false
@@ -64,18 +55,6 @@ export async function GET(req: Request) {
           projectedMonthlyIncome = addMoney(projectedMonthlyIncome, monthlyAmount)
         } else {
           projectedMonthlyExpenses = addMoney(projectedMonthlyExpenses, monthlyAmount)
-          if (item.isSubscription) {
-            monthlySubscriptionTotal = addMoney(monthlySubscriptionTotal, monthlyAmount)
-            const subcat = item.subcategory || "Other"
-            if (!subcategorySpendMap[subcat]) {
-              subcategorySpendMap[subcat] = { totalMonthly: 0, count: 0 }
-            }
-            subcategorySpendMap[subcat].totalMonthly = addMoney(
-              subcategorySpendMap[subcat].totalMonthly,
-              monthlyAmount
-            )
-            subcategorySpendMap[subcat].count++
-          }
         }
       } else {
         pausedCount++
@@ -105,9 +84,6 @@ export async function GET(req: Request) {
         pausedCount,
         dueCount,
         totalCount: schedules.length,
-        monthlySubscriptionTotal,
-        annualSubscriptionTotal: Math.round(monthlySubscriptionTotal * 12 * 100) / 100,
-        subcategoryBreakdown: subcategorySpendMap,
       },
     })
   } catch (error) {
@@ -146,11 +122,9 @@ export async function POST(req: Request) {
       startDate,
       endDate,
       isSubscription = false,
-      subcategory = null,
     } = validation.data
 
     // Verify category
-    let finalCategoryId = categoryId
     const category = await db.category.findFirst({
       where: {
         id: categoryId,
@@ -159,25 +133,7 @@ export async function POST(req: Request) {
     })
 
     if (!category) {
-      // If subscription and category not found, check if a Subscriptions category exists or fallback to first expense category
-      const subCat = await db.category.findFirst({
-        where: {
-          userId,
-          name: { contains: "subscription", mode: "insensitive" },
-        },
-      })
-      if (subCat) {
-        finalCategoryId = subCat.id
-      } else {
-        const fallbackCat = await db.category.findFirst({
-          where: { userId, type: "EXPENSE" },
-        })
-        if (fallbackCat) {
-          finalCategoryId = fallbackCat.id
-        } else {
-          return NextResponse.json({ message: "Category not found" }, { status: 404 })
-        }
-      }
+      return NextResponse.json({ message: "Category not found" }, { status: 404 })
     }
 
     // Verify account if provided
@@ -198,7 +154,7 @@ export async function POST(req: Request) {
         userId,
         type,
         amount,
-        categoryId: finalCategoryId,
+        categoryId,
         accountId: accountId || null,
         description,
         paymentMethod,
@@ -208,7 +164,6 @@ export async function POST(req: Request) {
         endDate: endDateTime,
         isActive: true,
         isSubscription: Boolean(isSubscription),
-        subcategory: subcategory || null,
       },
       include: {
         category: true,

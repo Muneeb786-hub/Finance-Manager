@@ -72,6 +72,7 @@ export function TransactionModal({
       description: "",
       paymentMethod: "OTHER",
       tags: [],
+      isRecurring: false,
     },
   })
 
@@ -141,7 +142,11 @@ export function TransactionModal({
         throw new Error(err.message || "Failed to save transaction")
       }
 
-      toast.success(isEditing ? "Transaction updated" : "Transaction created")
+      if (data.isRecurring) {
+        toast.success("Transaction recorded & scheduled to repeat every month!")
+      } else {
+        toast.success(isEditing ? "Transaction updated" : "Transaction created")
+      }
       onSuccess()
       onClose()
     } catch (err: any) {
@@ -317,6 +322,26 @@ export function TransactionModal({
               />
             </div>
           </div>
+
+          {/* Repeat Monthly / Subscription Checkbox */}
+          {!isEditing && (
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/40 border border-border/60">
+              <input
+                id="isRecurring"
+                type="checkbox"
+                {...register("isRecurring")}
+                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+              />
+              <div className="space-y-0.5">
+                <Label htmlFor="isRecurring" className="text-xs font-semibold cursor-pointer">
+                  Repeat monthly (Subscription / recurring bill)
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Automatically schedules this for next month so you won't have to add it again.
+                </p>
+              </div>
+            </div>
+          )}
 
           <DialogFooter className="gap-2 pt-4">
             <Button

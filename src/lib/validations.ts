@@ -20,6 +20,7 @@ export const TransactionSchema = z.object({
   description: z.string().min(1, "Description is required"),
   paymentMethod: z.string().default("OTHER"),
   tags: z.array(z.string()).default([]),
+  isRecurring: z.boolean().default(false),
 })
 
 export const BudgetSchema = z.object({
@@ -58,7 +59,6 @@ export const RecurringTransactionSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional().nullable(),
   isSubscription: z.boolean().default(false),
-  subcategory: z.string().optional().nullable(),
 })
 
 export const ProfileSettingsSchema = z.object({

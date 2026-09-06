@@ -124,8 +124,17 @@ export async function POST(req: Request) {
       )
     }
 
-    const { type, amount, categoryId, accountId, date, description, paymentMethod, tags } =
-      validated.data
+    const {
+      type,
+      amount,
+      categoryId,
+      accountId,
+      date,
+      description,
+      paymentMethod,
+      tags,
+      isRecurring = false,
+    } = validated.data
 
     // Verify category belongs to user and matches type
     const category = await db.category.findFirst({
@@ -153,6 +162,32 @@ export async function POST(req: Request) {
       }
     }
 
+    const txDate = new Date(date)
+    let recurringId: string | null = null
+
+    if (isRecurring) {
+      const nextRun = new Date(txDate)
+      nextRun.setMonth(nextRun.getMonth() + 1)
+
+      const recurring = await db.recurringTransaction.create({
+        data: {
+          userId,
+          type,
+          amount,
+          categoryId,
+          accountId: accountId || null,
+          description,
+          paymentMethod: paymentMethod || "OTHER",
+          frequency: "MONTHLY",
+          startDate: txDate,
+          nextRunDate: nextRun,
+          isActive: true,
+          isSubscription: true,
+        },
+      })
+      recurringId = recurring.id
+    }
+
     const transaction = await db.transaction.create({
       data: {
         userId,
@@ -160,10 +195,12 @@ export async function POST(req: Request) {
         amount,
         categoryId,
         accountId: accountId || null,
-        date: new Date(date),
+        date: txDate,
         description,
         paymentMethod: paymentMethod || "OTHER",
         tags: tags || [],
+        isRecurring: Boolean(isRecurring),
+        recurringTransactionId: recurringId,
       },
       include: {
         category: true,

@@ -376,7 +376,6 @@ export async function seedUserDemoData(userId: string) {
           startDate: new Date(curYear, curMonth - 2, sub.dayOffset),
           nextRunDate: nextDate,
           isSubscription: true,
-          subcategory: sub.subcategory,
           paymentMethod: "CREDIT_CARD",
         },
       })

@@ -16,7 +16,6 @@ const UpdateRecurringSchema = z.object({
   endDate: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
   isSubscription: z.boolean().optional(),
-  subcategory: z.string().optional().nullable(),
 })
 
 export async function GET(
@@ -100,7 +99,6 @@ export async function PUT(
     }
     if (validation.data.isActive !== undefined) updateData.isActive = validation.data.isActive
     if (validation.data.isSubscription !== undefined) updateData.isSubscription = validation.data.isSubscription
-    if (validation.data.subcategory !== undefined) updateData.subcategory = validation.data.subcategory || null
 
     const updated = await db.recurringTransaction.update({
       where: { id },

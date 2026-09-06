@@ -140,7 +140,7 @@ export function RecurringCard({
                   <>
                     <span>•</span>
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
-                      {schedule.subcategory || "Subscription"}
+                      Subscription
                     </span>
                   </>
                 )}
