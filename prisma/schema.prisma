@@ -63,6 +63,9 @@ model User {
   pendingSyncTransactions PendingSyncTransaction[]
   linkedAccountSyncs    LinkedAccountSync[]
   syncWebhookToken      String?                   @unique
+  twoFactorEnabled      Boolean                   @default(false)
+  twoFactorSecret       String?
+  twoFactorBackupCodes  String[]                  @default([])
 
   @@index([email])
 }

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User, Lock, Check, AlertCircle, Eye, EyeOff } from "lucide-react"
+import { TwoFactorSettingsCard } from "./two-factor-settings-card"
 
 interface ProfileSettingsTabProps {
   user: {
@@ -306,6 +307,9 @@ export function ProfileSettingsTab({ user, onProfileUpdated }: ProfileSettingsTa
           </form>
         </CardContent>
       </Card>
+
+      {/* Two-Factor Authentication (2FA) */}
+      <TwoFactorSettingsCard />
     </div>
   )
 }
