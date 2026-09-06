@@ -81,3 +81,15 @@ export const AccountDataWipeSchema = z.object({
     errorMap: () => ({ message: 'Please type "DELETE MY DATA" exactly to confirm' }),
   }),
 })
+
+export const OnboardingSetupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  preferredCurrency: z.string().default("USD"),
+  timezone: z.string().default("UTC"),
+  initialBalance: z.coerce.number().min(0).default(0),
+  budgetCategoryId: z.string().optional(),
+  budgetAmount: z.coerce.number().positive().optional().nullable(),
+  goalTitle: z.string().optional(),
+  goalTargetAmount: z.coerce.number().positive().optional().nullable(),
+  seedDemoData: z.boolean().default(false),
+})

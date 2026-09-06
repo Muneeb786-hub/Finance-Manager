@@ -2,6 +2,16 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [0.10.0] - 2026-09-06
+### Added
+- Milestone 10: Guided Setup Tour, First-Time User Onboarding Wizard, and Sandbox Demo Mode.
+- Onboarding completion API endpoint (`/api/onboarding/complete`) saving user profile preferences, initial account balances, first budget limit, and savings goal in an atomic transaction.
+- Realistic sandbox demo data seeder (`src/lib/demo-data.ts` and `/api/onboarding/seed-demo`) generating 3-month historical income and expense transactions, category budgets, savings milestones, and recurring schedules.
+- Multi-step interactive `OnboardingWizard` modal with 5 progression stages (Profile, Initial Ledger, Budget, Savings Goal, and Clean vs Sandbox Launch).
+- Dashboard Welcome & Sandbox Tour banner with 1-click guided wizard launcher and instant sandbox data loader.
+- Settings page Sandbox Demo section allowing on-demand sample data population for testing and evaluation.
+- Unit tests verifying onboarding setup schema validation, initial balance constraints, and default fallback parameters (`tests/unit/onboarding.test.ts`).
+
 ## [0.9.0] - 2026-09-05
 ### Added
 - Milestone 9: User Profile, Accounts & Categories Configuration, and Data Management Settings.

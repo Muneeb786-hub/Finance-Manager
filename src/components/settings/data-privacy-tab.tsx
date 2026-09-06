@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Database, Download, AlertTriangle, ShieldCheck, Trash2 } from "lucide-react"
+import { Database, Download, AlertTriangle, ShieldCheck, Trash2, Sparkles } from "lucide-react"
 
 interface DataPrivacyTabProps {
   onDataWiped: () => void
@@ -25,6 +25,8 @@ export function DataPrivacyTab({ onDataWiped }: DataPrivacyTabProps) {
   const [isWiping, setIsWiping] = useState(false)
   const [wipeError, setWipeError] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [isSeedingDemo, setIsSeedingDemo] = useState(false)
+  const [seedSuccess, setSeedSuccess] = useState(false)
 
   const handleExportData = async () => {
     setIsExporting(true)
@@ -47,6 +49,25 @@ export function DataPrivacyTab({ onDataWiped }: DataPrivacyTabProps) {
       alert("A network error occurred while downloading backup.")
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleSeedDemoData = async () => {
+    setIsSeedingDemo(true)
+    setSeedSuccess(false)
+    try {
+      const res = await fetch("/api/onboarding/seed-demo", { method: "POST" })
+      if (res.ok) {
+        setSeedSuccess(true)
+        onDataWiped()
+        setTimeout(() => setSeedSuccess(false), 4000)
+      } else {
+        alert("Failed to seed sandbox data.")
+      }
+    } catch (err) {
+      alert("A network error occurred while loading sandbox data.")
+    } finally {
+      setIsSeedingDemo(false)
     }
   }
 
@@ -113,6 +134,46 @@ export function DataPrivacyTab({ onDataWiped }: DataPrivacyTabProps) {
             >
               <Download className="h-4 w-4" />
               {isExporting ? "Generating..." : "Download Backup"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sandbox Demo Data Card */}
+      <Card className="border-primary/30 bg-primary/5 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2 text-primary">
+            <Sparkles className="h-5 w-5" />
+            <CardTitle className="text-base font-semibold">Demo Sandbox Mode</CardTitle>
+          </div>
+          <CardDescription className="text-xs">
+            Quickly populate realistic sample transactions, category budgets, savings goals, and recurring rules for testing
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {seedSuccess && (
+            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+              Demo sandbox records loaded successfully! Check your Dashboard and Analytics.
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-card">
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-foreground">Populate Realistic Sample Records</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Appends 3 months of salary, groceries, utilities, rent, active budgets, and savings milestones so all charts and health indicators display live metrics.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleSeedDemoData}
+              disabled={isSeedingDemo}
+              size="sm"
+              className="h-9 gap-1.5 text-xs shrink-0 shadow-xs"
+            >
+              <Sparkles className="h-4 w-4" />
+              {isSeedingDemo ? "Seeding..." : "Load Sample Sandbox"}
             </Button>
           </div>
         </CardContent>

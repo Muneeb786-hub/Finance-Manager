@@ -11,6 +11,8 @@ import { SavingsGoalsWidget } from "@/components/dashboard/savings-goals-widget"
 import { RecurringPreviewWidget } from "@/components/dashboard/recurring-preview-widget"
 import { QuickActions } from "@/components/dashboard/quick-actions"
 import { TransactionModal } from "@/components/transactions/transaction-modal"
+import { WelcomeBanner } from "@/components/dashboard/welcome-banner"
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard"
 import { formatCurrency } from "@/lib/utils"
 import {
   Wallet,
@@ -29,6 +31,8 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [isTransactionModalOpen, setIsTransactionModalOpen] = React.useState(false)
+  const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false)
+  const [isSeedingDemo, setIsSeedingDemo] = React.useState(false)
 
   const fetchDashboardData = React.useCallback(async () => {
     setIsLoading(true)
@@ -49,6 +53,20 @@ export default function DashboardPage() {
   React.useEffect(() => {
     fetchDashboardData()
   }, [fetchDashboardData])
+
+  const handleSeedDemo = async () => {
+    setIsSeedingDemo(true)
+    try {
+      const res = await fetch("/api/onboarding/seed-demo", { method: "POST" })
+      if (res.ok) {
+        await fetchDashboardData()
+      }
+    } catch (err) {
+      console.error("Failed to seed demo data", err)
+    } finally {
+      setIsSeedingDemo(false)
+    }
+  }
 
   const metrics = data?.metrics || {
     totalBalance: 0,
@@ -86,6 +104,15 @@ export default function DashboardPage() {
           <QuickActions onAddTransaction={() => setIsTransactionModalOpen(true)} />
         </div>
       </div>
+
+      {/* Welcome & Sandbox Tour Banner */}
+      {(!data?.onboardingComplete || data?.totalTransactionsCount === 0) && (
+        <WelcomeBanner
+          onStartWizard={() => setIsOnboardingOpen(true)}
+          onSeedDemo={handleSeedDemo}
+          isSeeding={isSeedingDemo}
+        />
+      )}
 
       {error && (
         <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-xs sm:text-sm text-destructive">
@@ -183,6 +210,18 @@ export default function DashboardPage() {
           setIsTransactionModalOpen(false)
           fetchDashboardData()
         }}
+      />
+
+      {/* Guided Onboarding Wizard */}
+      <OnboardingWizard
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onComplete={() => {
+          setIsOnboardingOpen(false)
+          fetchDashboardData()
+        }}
+        initialName={session?.user?.name || ""}
+        initialCurrency={data?.preferredCurrency || "USD"}
       />
     </div>
   )

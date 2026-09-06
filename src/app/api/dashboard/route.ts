@@ -21,6 +21,12 @@ export async function GET() {
     const startOfMonth = new Date(currentYear, currentMonth - 1, 1)
     const endOfMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999)
 
+    // Fetch user profile status
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { onboardingComplete: true, preferredCurrency: true, name: true },
+    })
+
     // 1. Fetch all accounts to compute account balances + opening balances
     const accounts = await db.account.findMany({
       where: { userId },
@@ -176,6 +182,9 @@ export async function GET() {
     })
 
     return NextResponse.json({
+      onboardingComplete: user?.onboardingComplete ?? true,
+      totalTransactionsCount: allTransactions.length,
+      preferredCurrency: user?.preferredCurrency || "USD",
       metrics: {
         totalBalance,
         currentMonthIncome,
