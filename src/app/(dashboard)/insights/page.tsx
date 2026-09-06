@@ -86,7 +86,7 @@ export default function FinancialInsightsPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Financial Insights &amp; Analytics</h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Automated intelligence analyzing cash flow margins, savings velocity, and budget health
+            Statistical cash flow analysis, savings velocity tracking, and budget health evaluations
           </p>
         </div>
 

@@ -42,7 +42,7 @@ export default function LandingPage() {
       <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold mb-6">
           <ShieldCheck className="h-3.5 w-3.5" />
-          <span>Private, Self-Managed Financial Intelligence</span>
+          <span>Private, Self-Managed Financial Platform</span>
         </div>
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight sm:leading-none">
           Master your money with clarity and confidence
