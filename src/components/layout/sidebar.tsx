@@ -13,6 +13,7 @@ import {
   Settings,
   Bell,
   Wallet,
+  CreditCard,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Transactions", href: "/transactions", icon: Receipt },
   { name: "Budgets", href: "/budgets", icon: PiggyBank },
   { name: "Goals", href: "/goals", icon: Target },
+  { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
   { name: "Recurring", href: "/recurring", icon: Repeat },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Financial Insights", href: "/insights", icon: Sparkles },

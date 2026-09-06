@@ -15,6 +15,19 @@ export async function seedUserDemoData(userId: string) {
   let transportCat = categories.find((c) => c.name.toLowerCase().includes("transport"))
   let billsCat = categories.find((c) => c.name.toLowerCase().includes("bill") || c.name.toLowerCase().includes("utilit"))
   let entertainmentCat = categories.find((c) => c.name.toLowerCase().includes("entertain"))
+  let subscriptionsCat = categories.find((c) => c.name.toLowerCase().includes("subscription"))
+  if (!subscriptionsCat) {
+    subscriptionsCat = await db.category.create({
+      data: {
+        userId,
+        name: "Subscriptions",
+        type: "EXPENSE",
+        icon: "repeat",
+        color: "#6366f1",
+        isDefault: true,
+      },
+    })
+  }
 
   // Create accounts if none exist, or fetch primary account
   let accounts = await db.account.findMany({ where: { userId } })
@@ -313,6 +326,58 @@ export async function seedUserDemoData(userId: string) {
           frequency: "MONTHLY",
           startDate: new Date(curYear, curMonth, 1),
           nextRunDate: new Date(curYear, curMonth + 1, 1),
+        },
+      })
+    }
+
+    // Seed realistic demo subscriptions
+    const subList = [
+      {
+        description: "ChatGPT Plus",
+        amount: 20.0,
+        subcategory: "AI",
+        dayOffset: 4,
+      },
+      {
+        description: "Spotify Premium",
+        amount: 11.99,
+        subcategory: "Entertainment",
+        dayOffset: 12,
+      },
+      {
+        description: "YouTube Premium",
+        amount: 13.99,
+        subcategory: "Entertainment",
+        dayOffset: 18,
+      },
+      {
+        description: "Google One Storage",
+        amount: 2.99,
+        subcategory: "Cloud",
+        dayOffset: 24,
+      },
+    ]
+
+    for (const sub of subList) {
+      const nextDate = new Date(curYear, curMonth, sub.dayOffset)
+      if (nextDate < now) {
+        nextDate.setMonth(nextDate.getMonth() + 1)
+      }
+
+      await db.recurringTransaction.create({
+        data: {
+          userId,
+          categoryId: subscriptionsCat.id,
+          accountId: primaryAccountId,
+          type: "EXPENSE",
+          amount: sub.amount,
+          description: sub.description,
+          frequency: "MONTHLY",
+          startDate: new Date(curYear, curMonth - 2, sub.dayOffset),
+          nextRunDate: nextDate,
+          isSubscription: true,
+          subcategory: sub.subcategory,
+          paymentMethod: "CREDIT_CARD",
         },
       })
     }

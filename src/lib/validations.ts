@@ -57,6 +57,8 @@ export const RecurringTransactionSchema = z.object({
   frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional().nullable(),
+  isSubscription: z.boolean().default(false),
+  subcategory: z.string().optional().nullable(),
 })
 
 export const ProfileSettingsSchema = z.object({

@@ -19,6 +19,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   { name: "Education", icon: "book-open", color: "#14b8a6" },
   { name: "Shopping", icon: "shopping-bag", color: "#d946ef" },
   { name: "Entertainment", icon: "film", color: "#f43f5e" },
+  { name: "Subscriptions", icon: "repeat", color: "#6366f1" },
   { name: "Health", icon: "activity", color: "#ef4444" },
   { name: "Other", icon: "tag", color: "#64748b" },
 ]

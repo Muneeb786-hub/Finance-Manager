@@ -75,8 +75,13 @@ export function RecurringModal({
       startDate: today,
       endDate: "",
       paymentMethod: "OTHER",
+      isSubscription: false,
+      subcategory: "",
     },
   })
+
+  const isSubscription = watch("isSubscription")
+  const currentSubcategory = watch("subcategory")
 
   const currentType = watch("type")
   const currentCategoryId = watch("categoryId")
@@ -113,6 +118,8 @@ export function RecurringModal({
           ? new Date(initialData.endDate).toISOString().split("T")[0]
           : "",
         paymentMethod: initialData.paymentMethod || "OTHER",
+        isSubscription: Boolean(initialData.isSubscription),
+        subcategory: initialData.subcategory || "",
       })
     } else {
       reset({
@@ -125,6 +132,8 @@ export function RecurringModal({
         startDate: today,
         endDate: "",
         paymentMethod: "OTHER",
+        isSubscription: false,
+        subcategory: "",
       })
     }
   }, [initialData, isOpen, today, reset])
@@ -336,6 +345,51 @@ export function RecurringModal({
               <Label htmlFor="endDate">End Date (Optional)</Label>
               <Input id="endDate" type="date" {...register("endDate")} />
             </div>
+          </div>
+
+          {/* Subscription Toggle & Subcategory */}
+          <div className="rounded-lg border border-border/70 p-3 space-y-2.5 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="isSubscription" className="text-xs font-semibold cursor-pointer">
+                  Track as Subscription
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Include in Subscriptions hub (AI, Streaming, Cloud, etc.)
+                </p>
+              </div>
+              <input
+                id="isSubscription"
+                type="checkbox"
+                {...register("isSubscription")}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+              />
+            </div>
+
+            {isSubscription && (
+              <div className="pt-2 border-t border-border/50 space-y-1.5">
+                <Label htmlFor="subcategory" className="text-xs">
+                  Subscription Subcategory
+                </Label>
+                <Select
+                  value={currentSubcategory || "AI"}
+                  onValueChange={(val) => setValue("subcategory", val)}
+                >
+                  <SelectTrigger id="subcategory" className="h-8 text-xs">
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AI">AI & Tools (ChatGPT, Claude, Copilot)</SelectItem>
+                    <SelectItem value="Entertainment">Entertainment (Spotify, YouTube, Netflix)</SelectItem>
+                    <SelectItem value="Cloud">Cloud & Storage (Google One, iCloud)</SelectItem>
+                    <SelectItem value="Productivity">Work & Productivity (Microsoft 365, Notion)</SelectItem>
+                    <SelectItem value="Gaming">Gaming (PlayStation, Xbox)</SelectItem>
+                    <SelectItem value="Lifestyle">Health & Lifestyle (Gym, Apps)</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="pt-2">

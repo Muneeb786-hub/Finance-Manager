@@ -15,11 +15,23 @@ export async function GET(req: Request) {
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
   const statusFilter = searchParams.get("status") || "ALL"
+  const isSubscriptionParam = searchParams.get("isSubscription")
+  const subcategoryParam = searchParams.get("subcategory")
 
   try {
     const whereClause: any = { userId }
     if (statusFilter === "ACTIVE") whereClause.isActive = true
     else if (statusFilter === "PAUSED") whereClause.isActive = false
+
+    if (isSubscriptionParam === "true") {
+      whereClause.isSubscription = true
+    } else if (isSubscriptionParam === "false") {
+      whereClause.isSubscription = false
+    }
+
+    if (subcategoryParam && subcategoryParam !== "ALL") {
+      whereClause.subcategory = subcategoryParam
+    }
 
     const rawSchedules = await db.recurringTransaction.findMany({
       where: whereClause,
@@ -37,6 +49,10 @@ export async function GET(req: Request) {
     let pausedCount = 0
     let dueCount = 0
 
+    // Subscription specific analytics
+    let monthlySubscriptionTotal = 0
+    const subcategorySpendMap: Record<string, { totalMonthly: number; count: number }> = {}
+
     const schedules = rawSchedules.map((item) => {
       const isDue = item.isActive && new Date(item.nextRunDate) <= now
       const isExpired = item.endDate ? new Date(item.endDate) < now : false
@@ -48,6 +64,18 @@ export async function GET(req: Request) {
           projectedMonthlyIncome = addMoney(projectedMonthlyIncome, monthlyAmount)
         } else {
           projectedMonthlyExpenses = addMoney(projectedMonthlyExpenses, monthlyAmount)
+          if (item.isSubscription) {
+            monthlySubscriptionTotal = addMoney(monthlySubscriptionTotal, monthlyAmount)
+            const subcat = item.subcategory || "Other"
+            if (!subcategorySpendMap[subcat]) {
+              subcategorySpendMap[subcat] = { totalMonthly: 0, count: 0 }
+            }
+            subcategorySpendMap[subcat].totalMonthly = addMoney(
+              subcategorySpendMap[subcat].totalMonthly,
+              monthlyAmount
+            )
+            subcategorySpendMap[subcat].count++
+          }
         }
       } else {
         pausedCount++
@@ -77,6 +105,9 @@ export async function GET(req: Request) {
         pausedCount,
         dueCount,
         totalCount: schedules.length,
+        monthlySubscriptionTotal,
+        annualSubscriptionTotal: Math.round(monthlySubscriptionTotal * 12 * 100) / 100,
+        subcategoryBreakdown: subcategorySpendMap,
       },
     })
   } catch (error) {
@@ -114,9 +145,12 @@ export async function POST(req: Request) {
       frequency,
       startDate,
       endDate,
+      isSubscription = false,
+      subcategory = null,
     } = validation.data
 
     // Verify category
+    let finalCategoryId = categoryId
     const category = await db.category.findFirst({
       where: {
         id: categoryId,
@@ -125,7 +159,25 @@ export async function POST(req: Request) {
     })
 
     if (!category) {
-      return NextResponse.json({ message: "Category not found" }, { status: 404 })
+      // If subscription and category not found, check if a Subscriptions category exists or fallback to first expense category
+      const subCat = await db.category.findFirst({
+        where: {
+          userId,
+          name: { contains: "subscription", mode: "insensitive" },
+        },
+      })
+      if (subCat) {
+        finalCategoryId = subCat.id
+      } else {
+        const fallbackCat = await db.category.findFirst({
+          where: { userId, type: "EXPENSE" },
+        })
+        if (fallbackCat) {
+          finalCategoryId = fallbackCat.id
+        } else {
+          return NextResponse.json({ message: "Category not found" }, { status: 404 })
+        }
+      }
     }
 
     // Verify account if provided
@@ -146,7 +198,7 @@ export async function POST(req: Request) {
         userId,
         type,
         amount,
-        categoryId,
+        categoryId: finalCategoryId,
         accountId: accountId || null,
         description,
         paymentMethod,
@@ -155,6 +207,8 @@ export async function POST(req: Request) {
         nextRunDate: startDateTime,
         endDate: endDateTime,
         isActive: true,
+        isSubscription: Boolean(isSubscription),
+        subcategory: subcategory || null,
       },
       include: {
         category: true,

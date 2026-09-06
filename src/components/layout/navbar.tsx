@@ -39,6 +39,7 @@ export function Navbar() {
     if (path.startsWith("/transactions")) return "Transactions"
     if (path.startsWith("/budgets")) return "Budgets"
     if (path.startsWith("/goals")) return "Savings Goals"
+    if (path.startsWith("/subscriptions")) return "Subscriptions"
     if (path.startsWith("/recurring")) return "Recurring Transactions"
     if (path.startsWith("/analytics")) return "Analytics"
     if (path.startsWith("/insights")) return "Financial Insights"
@@ -99,6 +100,7 @@ export function Navbar() {
           <Link href="/transactions" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Transactions</Link>
           <Link href="/budgets" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Budgets</Link>
           <Link href="/goals" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Goals</Link>
+          <Link href="/subscriptions" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Subscriptions</Link>
           <Link href="/recurring" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Recurring</Link>
           <Link href="/analytics" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Analytics</Link>
           <Link href="/insights" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Financial Insights</Link>

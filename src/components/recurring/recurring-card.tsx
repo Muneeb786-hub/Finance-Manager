@@ -31,6 +31,8 @@ export interface RecurringScheduleData {
   isExpired: boolean
   monthlyAmount: number
   paymentMethod?: string | null
+  isSubscription?: boolean
+  subcategory?: string | null
   category: {
     id: string
     name: string
@@ -134,6 +136,14 @@ export function RecurringCard({
                   />
                   {schedule.category?.name}
                 </span>
+                {schedule.isSubscription && (
+                  <>
+                    <span>•</span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                      {schedule.subcategory || "Subscription"}
+                    </span>
+                  </>
+                )}
                 {schedule.account && (
                   <>
                     <span>•</span>
