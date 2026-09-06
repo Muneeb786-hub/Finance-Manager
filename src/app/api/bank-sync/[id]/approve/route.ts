@@ -34,6 +34,7 @@ export async function POST(
 
     const body = await req.json().catch(() => ({}))
     const finalAmount = body.amount !== undefined ? parseFloat(body.amount) : pending.amount
+    const finalMerchant = (typeof body.merchant === "string" && body.merchant.trim()) ? body.merchant.trim() : pending.merchant
     const finalCategoryId = body.categoryId || pending.suggestedCategoryId
     const finalAccountId = body.accountId || pending.accountId
     const isRecurring = Boolean(body.isRecurring)
@@ -57,7 +58,7 @@ export async function POST(
           amount: finalAmount,
           categoryId: finalCategoryId,
           accountId: finalAccountId,
-          description: pending.merchant,
+          description: finalMerchant,
           paymentMethod: pending.channel,
           frequency: "MONTHLY",
           startDate: txDate,
@@ -78,7 +79,7 @@ export async function POST(
         categoryId: finalCategoryId,
         accountId: finalAccountId,
         date: txDate,
-        description: pending.merchant,
+        description: finalMerchant,
         paymentMethod: pending.channel,
         tags: [pending.channel.toLowerCase(), "auto-sync"],
         isRecurring,
