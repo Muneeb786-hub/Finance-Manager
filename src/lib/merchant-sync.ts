@@ -4,6 +4,8 @@ export interface ParsedBankAlert {
   currency: string
   channel: "EASYPAISA" | "JAZZCASH" | "CARD" | "BANK"
   suggestedCategoryName: string
+  extractedIdentifier?: string
+  providerHint?: string
   rawText?: string
 }
 
@@ -69,37 +71,67 @@ export function detectMerchantAndCategory(text: string): { merchant: string; cat
 /**
  * Parse an incoming SMS or transaction alert text
  * Supports:
- * - Easypaisa (3737): "You have sent Rs. 5,600 to OPENAI from your Easypaisa Mobile Account..."
- * - Credit/Debit Card: "Dear Customer, transaction of Rs 5,600.00 carried out on your Card ending 4242 at OPENAI..."
- * - Bank Account / Meezan: "Paid Rs. 1450.00 at FOODPANDA using Meezan Card ending 1234..."
+ * - Easypaisa (3737)
+ * - JazzCash (8558)
+ * - Meezan Bank & Pakistani Banks (HBL, Alfalah, Standard Chartered)
+ * - SadaPay & NayaPay
+ * - Standard Visa / Mastercard
  */
 export function parseBankAlert(text: string): ParsedBankAlert {
   const normalized = text.replace(/,/g, "")
 
-  // Detect channel
+  // Detect channel & provider hint
   let channel: "EASYPAISA" | "JAZZCASH" | "CARD" | "BANK" = "CARD"
-  if (/easypaisa|3737/i.test(text)) {
-    channel = "EASYPAISA"
-  } else if (/jazzcash|8558/i.test(text)) {
+  let providerHint = "CARD"
+
+  if (/jazzcash|8558/i.test(text)) {
     channel = "JAZZCASH"
-  } else if (/bank|meezan|hbl|alfalah|standard chartered|mcb|ubl/i.test(text)) {
+    providerHint = "JAZZCASH"
+  } else if (/easypaisa|3737|mobile\s*account/i.test(text)) {
+    channel = "EASYPAISA"
+    providerHint = "EASYPAISA"
+  } else if (/meezan/i.test(text)) {
     channel = "BANK"
-  } else if (/card|visa|mastercard/i.test(text)) {
+    providerHint = "MEEZAN_BANK"
+  } else if (/hbl/i.test(text)) {
+    channel = "BANK"
+    providerHint = "HBL"
+  } else if (/sadapay/i.test(text)) {
     channel = "CARD"
+    providerHint = "SADAPAY"
+  } else if (/nayapay/i.test(text)) {
+    channel = "CARD"
+    providerHint = "NAYAPAY"
+  } else if (/bank|alfalah|standard chartered|mcb|ubl/i.test(text)) {
+    channel = "BANK"
+    providerHint = "BANK"
   }
 
   // Extract amount
   // Matches: Rs. 5600, Rs 5600.00, PKR 5600, $20.00, 5600.00 PKR
-  const amountMatch = normalized.match(/(?:rs\.?|pkr|\$)\s*([\d]+(?:\.\d{1,2})?)/i) ||
+  const amountMatch =
+    normalized.match(/(?:rs\.?|pkr|\$)\s*([\d]+(?:\.\d{1,2})?)/i) ||
     normalized.match(/([\d]+(?:\.\d{1,2})?)\s*(?:rs|pkr)/i)
 
   const amount = amountMatch ? parseFloat(amountMatch[1]) : 0
 
+  // Extract identifier (phone number e.g. 03001234567 or card last 4 e.g. ending in 4242)
+  let extractedIdentifier: string | undefined
+  const cardMatch = text.match(/(?:ending\s+(?:in\s+)?|card\s+(?:ending\s+)?|card\s+#?\s*)(\d{4})/i)
+  if (cardMatch) {
+    extractedIdentifier = cardMatch[1]
+  } else {
+    const mobileMatch = text.match(/(?:account|mobile|no\.?|wallet)\s*(03\d{9})/i)
+    if (mobileMatch) {
+      extractedIdentifier = mobileMatch[1]
+    }
+  }
+
   // Extract merchant
-  // Matches: "at OPENAI", "to OPENAI", "paid at OPENAI", "from OPENAI"
+  // Matches: "at OPENAI", "to OPENAI", "paid at OPENAI", "for OPENAI"
   let merchantCandidate = ""
   const merchantMatch =
-    text.match(/(?:at|to|towards|for)\s+([A-Za-z0-9\s&.-]+?)(?:\s+(?:on|from|using|via|fee|balance|ref|trx|with|\.))/i) ||
+    text.match(/(?:at|to|towards|for)\s+([A-Za-z0-9\s&.-]+?)(?:\s+(?:on|from|using|via|fee|balance|ref|trx|tid|with|\.))/i) ||
     text.match(/(?:at|to)\s+([A-Za-z0-9\s&.-]+)$/i)
 
   if (merchantMatch) {
@@ -116,6 +148,42 @@ export function parseBankAlert(text: string): ParsedBankAlert {
     currency: "PKR",
     channel,
     suggestedCategoryName: category,
+    extractedIdentifier,
+    providerHint,
     rawText: text,
   }
 }
+
+export const SAMPLE_SMS_TEMPLATES = [
+  {
+    id: "easypaisa",
+    label: "Easypaisa (3737)",
+    provider: "EASYPAISA",
+    text: "You have paid Rs. 5,600.00 to OPENAI from Mobile Account 03001234567. Balance: Rs. 14,200.00. Trans ID: 1234567890",
+  },
+  {
+    id: "jazzcash",
+    label: "JazzCash (8558)",
+    provider: "JAZZCASH",
+    text: "Transaction of Rs. 1,450.00 paid to FOODPANDA via JazzCash Account 03011234567. Fee Rs. 0.00. TID: 987654321",
+  },
+  {
+    id: "meezan",
+    label: "Meezan Bank Card",
+    provider: "MEEZAN_BANK",
+    text: "Paid Rs. 5,600.00 at OPENAI using Meezan Visa Debit Card ending 4242 on 06-09-2026. Available Balance: PKR 88,400.00",
+  },
+  {
+    id: "sadapay",
+    label: "SadaPay",
+    provider: "SADAPAY",
+    text: "You just spent Rs. 599.00 at SPOTIFY with your SadaPay card ending 1122.",
+  },
+  {
+    id: "hbl",
+    label: "HBL Bank Card",
+    provider: "HBL",
+    text: "Dear Customer, your card ending in 9876 was used for PKR 8,200.00 at K-ELECTRIC on 06/09/2026.",
+  },
+]
+

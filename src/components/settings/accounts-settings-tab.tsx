@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Wallet, Plus, Trash2, Edit2, CreditCard, Building, Smartphone, Banknote } from "lucide-react"
+import { LinkedAccountsCard } from "@/components/bank-sync/linked-accounts-card"
 
 export interface AccountRecord {
   id: string
@@ -127,7 +128,10 @@ export function AccountsSettingsTab({ accounts, onRefresh }: AccountsSettingsTab
   }
 
   return (
-    <Card className="border-border shadow-sm">
+    <div className="space-y-6">
+      <LinkedAccountsCard existingLedgerAccounts={accounts} />
+
+      <Card className="border-border shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -291,5 +295,6 @@ export function AccountsSettingsTab({ accounts, onRefresh }: AccountsSettingsTab
         </DialogContent>
       </Dialog>
     </Card>
+    </div>
   )
 }

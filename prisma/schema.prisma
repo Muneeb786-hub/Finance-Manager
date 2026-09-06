@@ -61,6 +61,8 @@ model User {
   notifications         Notification[]
   financialInsights     FinancialInsight[]
   pendingSyncTransactions PendingSyncTransaction[]
+  linkedAccountSyncs    LinkedAccountSync[]
+  syncWebhookToken      String?                   @unique
 
   @@index([email])
 }
@@ -78,6 +80,7 @@ model Account {
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]
   pendingSyncTransactions PendingSyncTransaction[]
+  linkedAccountSyncs    LinkedAccountSync[]
 
   @@index([userId])
 }
@@ -258,4 +261,22 @@ model PendingSyncTransaction {
   updatedAt           DateTime     @updatedAt
 
   @@index([userId, status])
+}
+
+model LinkedAccountSync {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    String?
+  account      Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  provider     String    // "EASYPAISA", "JAZZCASH", "MEEZAN_BANK", "HBL", "BANK_ALFALAH", "SADAPAY", "NAYAPAY", "CARD"
+  accountName  String
+  identifier   String    // e.g. "03001234567" or "ending in 4242"
+  senderId     String?   // e.g. "3737", "8558", "MeezanBank"
+  isActive     Boolean   @default(true)
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
 }
