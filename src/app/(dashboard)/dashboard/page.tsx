@@ -11,6 +11,7 @@ import { SavingsGoalsWidget } from "@/components/dashboard/savings-goals-widget"
 import { RecurringPreviewWidget } from "@/components/dashboard/recurring-preview-widget"
 import { QuickActions } from "@/components/dashboard/quick-actions"
 import { TransactionModal } from "@/components/transactions/transaction-modal"
+import { MonthlySpendingModal } from "@/components/dashboard/monthly-spending-modal"
 import { WelcomeBanner } from "@/components/dashboard/welcome-banner"
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard"
 import { PendingSyncBanner } from "@/components/bank-sync/pending-sync-banner"
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [isTransactionModalOpen, setIsTransactionModalOpen] = React.useState(false)
+  const [isSpendingModalOpen, setIsSpendingModalOpen] = React.useState(false)
   const [isOnboardingOpen, setIsOnboardingOpen] = React.useState(false)
   const [isSimulateSyncOpen, setIsSimulateSyncOpen] = React.useState(false)
   const [isSeedingDemo, setIsSeedingDemo] = React.useState(false)
@@ -143,9 +145,11 @@ export default function DashboardPage() {
         <MetricCard
           title="Total Net Worth"
           value={isLoading ? "..." : formatCurrency(metrics.totalBalance)}
-          subtitle="Combined accounts and cash balance"
+          subtitle="Combined accounts, cash, gold & silver"
           icon={Wallet}
           variant="default"
+          href="/assets"
+          actionHint="Assets"
         />
         <MetricCard
           title="Monthly Income"
@@ -153,6 +157,8 @@ export default function DashboardPage() {
           subtitle="Total earned this calendar month"
           icon={ArrowDownLeft}
           variant="income"
+          onClick={() => setIsSpendingModalOpen(true)}
+          actionHint="Breakdown"
         />
         <MetricCard
           title="Monthly Expenses"
@@ -160,6 +166,8 @@ export default function DashboardPage() {
           subtitle="Total spent this calendar month"
           icon={ArrowUpRight}
           variant="expense"
+          onClick={() => setIsSpendingModalOpen(true)}
+          actionHint="Breakdown"
         />
         <MetricCard
           title="Net Cash Flow"
@@ -167,6 +175,8 @@ export default function DashboardPage() {
           subtitle={isNetSurplus ? "Net surplus this month" : "Net deficit this month"}
           icon={TrendingUp}
           variant={isNetSurplus ? "income" : "expense"}
+          onClick={() => setIsSpendingModalOpen(true)}
+          actionHint="Breakdown"
         />
       </div>
 
@@ -219,6 +229,16 @@ export default function DashboardPage() {
           setIsTransactionModalOpen(false)
           fetchDashboardData()
         }}
+      />
+
+      {/* Monthly Cash Flow & Spending Summary Modal */}
+      <MonthlySpendingModal
+        isOpen={isSpendingModalOpen}
+        onClose={() => setIsSpendingModalOpen(false)}
+        monthlyIncome={metrics.currentMonthIncome}
+        monthlyExpenses={metrics.currentMonthExpenses}
+        netFlow={metrics.currentMonthNetFlow}
+        spendingByCategory={data?.spendingByCategory || []}
       />
 
       {/* Guided Onboarding Wizard */}

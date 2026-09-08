@@ -84,6 +84,24 @@ export const AccountDataWipeSchema = z.object({
   }),
 })
 
+export const AssetSchema = z.object({
+  name: z.string().min(1, "Asset name is required").max(100),
+  category: z.enum([
+    "CASH",
+    "BANK",
+    "GOLD",
+    "SILVER",
+    "CRYPTO",
+    "REAL_ESTATE",
+    "INVESTMENT",
+    "OTHER",
+  ]),
+  value: z.coerce.number().min(0, "Asset value cannot be negative"),
+  quantity: z.coerce.number().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+})
+
 export const OnboardingSetupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   preferredCurrency: z.string().default("USD"),

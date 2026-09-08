@@ -66,13 +66,13 @@ export async function GET(req: Request) {
   }
 
   // Determine sorting orderBy
-  let orderBy: Prisma.TransactionOrderByWithRelationInput = { date: sortOrder }
+  let orderBy: any = [{ date: sortOrder }, { createdAt: "desc" }]
   if (sortBy === "amount") {
-    orderBy = { amount: sortOrder }
+    orderBy = [{ amount: sortOrder }, { createdAt: "desc" }]
   } else if (sortBy === "type") {
-    orderBy = { type: sortOrder }
+    orderBy = [{ type: sortOrder }, { createdAt: "desc" }]
   } else if (sortBy === "category") {
-    orderBy = { category: { name: sortOrder } }
+    orderBy = [{ category: { name: sortOrder } }, { createdAt: "desc" }]
   }
 
   try {
@@ -162,7 +162,15 @@ export async function POST(req: Request) {
       }
     }
 
-    const txDate = new Date(date)
+    let txDate = new Date(date)
+    const now = new Date()
+    if (
+      txDate.getUTCFullYear() === now.getUTCFullYear() &&
+      txDate.getUTCMonth() === now.getUTCMonth() &&
+      txDate.getUTCDate() === now.getUTCDate()
+    ) {
+      txDate = now
+    }
     let recurringId: string | null = null
 
     if (isRecurring) {

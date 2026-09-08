@@ -229,6 +229,7 @@ export default function BudgetsPage() {
         currentMonth={currentMonth}
         currentYear={currentYear}
         existingCategoryIds={existingCategoryIds}
+        allBudgets={budgets}
       />
 
       <BudgetDeleteModal

@@ -91,14 +91,19 @@ export function BudgetProgressWidget({ budgets }: BudgetProgressWidgetProps) {
             {budgets.slice(0, 4).map((b) => {
               const displayPercent = Math.min(100, b.percent)
               return (
-                <div key={b.id} className="space-y-1.5">
+                <Link
+                  key={b.id}
+                  href="/budgets"
+                  className="block space-y-1.5 p-1.5 -mx-1.5 rounded-lg hover:bg-muted/40 transition-colors group cursor-pointer"
+                  title="Click to edit budget limit"
+                >
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 min-w-0">
                       <span
                         className="h-2 w-2 rounded-full shrink-0"
                         style={{ backgroundColor: b.category?.color || "#10b981" }}
                       />
-                      <span className="font-medium text-foreground truncate">
+                      <span className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
                         {b.category?.name || "Category"}
                       </span>
                     </div>
@@ -131,7 +136,7 @@ export function BudgetProgressWidget({ budgets }: BudgetProgressWidgetProps) {
                         : `${formatCurrency(b.remaining)} remaining`}
                     </span>
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>

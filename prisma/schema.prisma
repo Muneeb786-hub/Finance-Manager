@@ -62,6 +62,7 @@ model User {
   financialInsights     FinancialInsight[]
   pendingSyncTransactions PendingSyncTransaction[]
   linkedAccountSyncs    LinkedAccountSync[]
+  assets                Asset[]
   syncWebhookToken      String?                   @unique
   twoFactorEnabled      Boolean                   @default(false)
   twoFactorSecret       String?
@@ -282,4 +283,21 @@ model LinkedAccountSync {
   updatedAt    DateTime  @updatedAt
 
   @@index([userId])
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   // e.g. "Physical Gold (24k)", "Silver Bullion", "Emergency Cash", "Meezan Bank"
+  category  String   // "CASH", "BANK", "GOLD", "SILVER", "CRYPTO", "REAL_ESTATE", "INVESTMENT", "OTHER"
+  value     Float    // Valuation / balance
+  quantity  Float?   // Optional e.g. 10
+  unit      String?  // Optional e.g. "tola", "grams", "oz", "coins"
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, category])
 }

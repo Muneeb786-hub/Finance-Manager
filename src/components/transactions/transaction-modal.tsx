@@ -337,7 +337,7 @@ export function TransactionModal({
                   Repeat monthly (Subscription / recurring bill)
                 </Label>
                 <p className="text-[11px] text-muted-foreground">
-                  Automatically schedules this for next month so you won't have to add it again.
+                  Automatically schedules this for next month so you won&apos;t have to add it again.
                 </p>
               </div>
             </div>

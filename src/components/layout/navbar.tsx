@@ -36,6 +36,7 @@ export function Navbar() {
 
   const getPageTitle = (path: string) => {
     if (path.startsWith("/dashboard")) return "Dashboard"
+    if (path.startsWith("/assets")) return "Total Net Worth & Assets"
     if (path.startsWith("/transactions")) return "Transactions"
     if (path.startsWith("/budgets")) return "Budgets"
     if (path.startsWith("/goals")) return "Savings Goals"
@@ -96,6 +97,7 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-x-0 top-16 bg-card border-b border-border p-4 shadow-lg flex flex-col gap-2 z-50">
           <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Dashboard</Link>
+          <Link href="/assets" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Assets & Net Worth</Link>
           <Link href="/transactions" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Transactions</Link>
           <Link href="/budgets" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Budgets</Link>
           <Link href="/goals" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-md hover:bg-muted text-sm font-medium">Goals</Link>

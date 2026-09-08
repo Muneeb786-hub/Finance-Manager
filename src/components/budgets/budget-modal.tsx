@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
+import { Loader2, Plus, Check, Info, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { BudgetData } from "./budget-card"
 
@@ -28,6 +29,7 @@ interface Category {
   name: string
   type: "INCOME" | "EXPENSE"
   color: string
+  icon?: string
 }
 
 interface BudgetModalProps {
@@ -38,7 +40,21 @@ interface BudgetModalProps {
   currentMonth: number
   currentYear: number
   existingCategoryIds?: string[]
+  allBudgets?: BudgetData[]
 }
+
+const PRESET_COLORS = [
+  "#10b981", // Emerald
+  "#3b82f6", // Blue
+  "#6366f1", // Indigo
+  "#8b5cf6", // Purple
+  "#ec4899", // Pink
+  "#f43f5e", // Rose
+  "#f97316", // Orange
+  "#eab308", // Amber
+  "#06b6d4", // Cyan
+  "#64748b", // Slate
+]
 
 export function BudgetModal({
   isOpen,
@@ -48,10 +64,17 @@ export function BudgetModal({
   currentMonth,
   currentYear,
   existingCategoryIds = [],
+  allBudgets = [],
 }: BudgetModalProps) {
   const [categories, setCategories] = React.useState<Category[]>([])
   const [isLoadingCategories, setIsLoadingCategories] = React.useState(true)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  // Inline custom category creation mode
+  const [isCreatingCategory, setIsCreatingCategory] = React.useState(false)
+  const [newCatName, setNewCatName] = React.useState("")
+  const [newCatColor, setNewCatColor] = React.useState(PRESET_COLORS[0])
+  const [isSavingCategory, setIsSavingCategory] = React.useState(false)
 
   const isEditing = !!initialData
 
@@ -74,20 +97,29 @@ export function BudgetModal({
   })
 
   // Fetch expense categories
-  React.useEffect(() => {
-    if (!isOpen) return
+  const fetchCategories = React.useCallback(async () => {
     setIsLoadingCategories(true)
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          const expenseCats = data.filter((c: any) => c.type === "EXPENSE")
-          setCategories(expenseCats)
-        }
-      })
-      .catch((err) => console.error("Failed to fetch categories:", err))
-      .finally(() => setIsLoadingCategories(false))
-  }, [isOpen])
+    try {
+      const res = await fetch("/api/categories")
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        const expenseCats = data.filter((c: any) => c.type === "EXPENSE")
+        setCategories(expenseCats)
+      }
+    } catch (err) {
+      console.error("Failed to fetch categories:", err)
+    } finally {
+      setIsLoadingCategories(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchCategories()
+      setIsCreatingCategory(false)
+      setNewCatName("")
+    }
+  }, [isOpen, fetchCategories])
 
   // Populate form on edit
   React.useEffect(() => {
@@ -110,11 +142,70 @@ export function BudgetModal({
     }
   }, [initialData, currentMonth, currentYear, reset])
 
+  const selectedCategoryId = watch("categoryId")
+
+  // Check if chosen category already has a budget in this month
+  const matchingExistingBudget = React.useMemo(() => {
+    if (!selectedCategoryId) return null
+    return allBudgets.find((b) => b.categoryId === selectedCategoryId) || null
+  }, [selectedCategoryId, allBudgets])
+
+  // If a category with existing budget is chosen and not explicitly editing, prefill its current amount
+  React.useEffect(() => {
+    if (!isEditing && matchingExistingBudget) {
+      setValue("amount", matchingExistingBudget.amount)
+      setValue("alertThreshold", matchingExistingBudget.alertThreshold)
+    }
+  }, [matchingExistingBudget, isEditing, setValue])
+
+  const handleCreateCustomCategory = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!newCatName.trim()) {
+      toast.error("Please enter a category name")
+      return
+    }
+
+    setIsSavingCategory(true)
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newCatName.trim(),
+          type: "EXPENSE",
+          color: newCatColor,
+          icon: "tag",
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.message || "Failed to create category")
+      }
+
+      const createdCat = await res.json()
+      toast.success(`Category "${createdCat.name}" created!`)
+
+      setCategories((prev) => [...prev, createdCat])
+      setValue("categoryId", createdCat.id, { shouldValidate: true })
+      setIsCreatingCategory(false)
+      setNewCatName("")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create category")
+    } finally {
+      setIsSavingCategory(false)
+    }
+  }
+
   const onSubmit = async (values: BudgetFormValues) => {
     setIsSubmitting(true)
     try {
-      if (isEditing && initialData) {
-        const res = await fetch(`/api/budgets/${initialData.id}`, {
+      const targetBudgetId = isEditing
+        ? initialData?.id
+        : matchingExistingBudget?.id
+
+      if (targetBudgetId) {
+        const res = await fetch(`/api/budgets/${targetBudgetId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -128,7 +219,7 @@ export function BudgetModal({
           throw new Error(err.message || "Failed to update budget")
         }
 
-        toast.success("Budget updated successfully")
+        toast.success("Budget limit updated successfully")
       } else {
         const res = await fetch("/api/budgets", {
           method: "POST",
@@ -153,30 +244,96 @@ export function BudgetModal({
     }
   }
 
-  // Filter out already budgeted categories if creating new
-  const availableCategories = isEditing
-    ? categories
-    : categories.filter((c) => !existingCategoryIds.includes(c.id))
-
-  const selectedCategoryId = watch("categoryId")
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Category Budget" : "Set Category Budget"}</DialogTitle>
+          <DialogTitle>
+            {isEditing || matchingExistingBudget ? "Edit Category Budget Limit" : "Set Category Budget"}
+          </DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "Update your monthly spending limit and alert threshold."
-              : "Define a monthly spending ceiling for a specific category."}
+            {isEditing || matchingExistingBudget
+              ? "Update your monthly spending limit or threshold (e.g. change from $800 to $900)."
+              : "Define a monthly spending ceiling for an existing category or create a new one."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          {/* Category Select */}
-          <div className="space-y-1.5">
-            <Label htmlFor="category">Expense Category</Label>
-            {isEditing ? (
+          {/* Category Select or Create Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="category">Expense Category</Label>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingCategory(!isCreatingCategory)}
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {isCreatingCategory ? "Select Existing" : "Add Custom Category"}
+                </button>
+              )}
+            </div>
+
+            {/* Inline Custom Category Creator */}
+            {isCreatingCategory ? (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Create New Category
+                </div>
+                <div className="space-y-1">
+                  <Input
+                    placeholder="e.g. Education, Gym, Coffee..."
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="h-9 text-xs"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Color Selector */}
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground font-medium">Pick a Color</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setNewCatColor(c)}
+                        className={`h-5 w-5 rounded-full transition-transform ${
+                          newCatColor === c ? "scale-125 ring-2 ring-primary ring-offset-2" : "hover:scale-110"
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setIsCreatingCategory(false)}
+                    disabled={isSavingCategory}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 text-xs gap-1"
+                    onClick={handleCreateCustomCategory}
+                    disabled={isSavingCategory}
+                  >
+                    {isSavingCategory && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Save & Select
+                  </Button>
+                </div>
+              </div>
+            ) : isEditing ? (
               <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/30 p-2.5 text-sm font-medium">
                 <span
                   className="h-2.5 w-2.5 rounded-full"
@@ -193,40 +350,66 @@ export function BudgetModal({
                 <SelectTrigger id="category">
                   <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
                 </SelectTrigger>
-                <SelectContent>
-                  {availableCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <span>{cat.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                  {availableCategories.length === 0 && !isLoadingCategories && (
-                    <div className="p-2 text-xs text-muted-foreground text-center">
-                      All available expense categories are already budgeted.
-                    </div>
-                  )}
+                <SelectContent className="max-h-56">
+                  {categories.map((cat) => {
+                    const isBudgeted = allBudgets.some((b) => b.categoryId === cat.id)
+                    return (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          <span>{cat.name}</span>
+                          {isBudgeted && (
+                            <span className="text-[10px] text-muted-foreground ml-1">
+                              (Has active budget)
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             )}
+
             {errors.categoryId && (
               <p className="text-xs text-destructive">{errors.categoryId.message}</p>
             )}
+
+            {/* If user picked a category that already has a budget, show notification */}
+            {!isEditing && matchingExistingBudget && (
+              <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-2.5 text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold">
+                    Current budget: {formatCurrency(matchingExistingBudget.amount)}/mo
+                  </span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Update the limit below to change your monthly spending target (e.g. from {formatCurrency(matchingExistingBudget.amount)} to $900).
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Monthly Limit Amount */}
+          {/* Monthly Limit Amount ($) */}
           <div className="space-y-1.5">
-            <Label htmlFor="amount">Monthly Budget Limit ($)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="amount">Monthly Budget Limit ($)</Label>
+              {matchingExistingBudget && (
+                <span className="text-[11px] text-muted-foreground">
+                  Current: {formatCurrency(matchingExistingBudget.amount)}
+                </span>
+              )}
+            </div>
             <Input
               id="amount"
               type="number"
               step="0.01"
               min="0.01"
-              placeholder="500.00"
+              placeholder="e.g. 900.00"
               {...register("amount")}
             />
             {errors.amount && (
@@ -264,7 +447,7 @@ export function BudgetModal({
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Budget"}
+              {isEditing || matchingExistingBudget ? "Update Budget Limit" : "Create Budget"}
             </Button>
           </DialogFooter>
         </form>

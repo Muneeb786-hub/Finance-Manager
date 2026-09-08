@@ -27,10 +27,11 @@ export async function GET() {
       select: { onboardingComplete: true, preferredCurrency: true, name: true },
     })
 
-    // 1. Fetch all accounts to compute account balances + opening balances
-    const accounts = await db.account.findMany({
-      where: { userId },
-    })
+    // 1. Fetch all accounts and user assets
+    const [accounts, assets] = await Promise.all([
+      db.account.findMany({ where: { userId } }),
+      db.asset.findMany({ where: { userId } }),
+    ])
 
     // 2. Fetch all user transactions to compute net total balance
     const allTransactions = await db.transaction.findMany({
@@ -42,7 +43,11 @@ export async function GET() {
     let netTransactionsBalance = allTransactions.reduce((acc, t) => {
       return t.type === "INCOME" ? addMoney(acc, t.amount) : subtractMoney(acc, t.amount)
     }, 0)
-    const totalBalance = addMoney(initialAccountsBalance, netTransactionsBalance)
+    const accountsBalance = addMoney(initialAccountsBalance, netTransactionsBalance)
+
+    // Net worth = Assets total if assets tracked, otherwise accounts balance
+    const assetsTotal = assets.reduce((sum, a) => addMoney(sum, a.value), 0)
+    const totalBalance = assets.length > 0 ? assetsTotal : accountsBalance
 
     // 3. Current month transactions
     const currentMonthTransactions = await db.transaction.findMany({
