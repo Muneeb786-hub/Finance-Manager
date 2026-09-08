@@ -145,7 +145,6 @@ export default function DashboardPage() {
         <MetricCard
           title="Total Net Worth"
           value={isLoading ? "..." : formatCurrency(metrics.totalBalance)}
-          subtitle="Combined accounts, cash, gold & silver"
           icon={Wallet}
           variant="default"
           href="/assets"
@@ -154,7 +153,6 @@ export default function DashboardPage() {
         <MetricCard
           title="Monthly Income"
           value={isLoading ? "..." : formatCurrency(metrics.currentMonthIncome)}
-          subtitle="Total earned this calendar month"
           icon={ArrowDownLeft}
           variant="income"
           onClick={() => setIsSpendingModalOpen(true)}
@@ -163,7 +161,6 @@ export default function DashboardPage() {
         <MetricCard
           title="Monthly Expenses"
           value={isLoading ? "..." : formatCurrency(metrics.currentMonthExpenses)}
-          subtitle="Total spent this calendar month"
           icon={ArrowUpRight}
           variant="expense"
           onClick={() => setIsSpendingModalOpen(true)}
@@ -172,7 +169,6 @@ export default function DashboardPage() {
         <MetricCard
           title="Net Cash Flow"
           value={isLoading ? "..." : formatCurrency(metrics.currentMonthNetFlow)}
-          subtitle={isNetSurplus ? "Net surplus this month" : "Net deficit this month"}
           icon={TrendingUp}
           variant={isNetSurplus ? "income" : "expense"}
           onClick={() => setIsSpendingModalOpen(true)}
