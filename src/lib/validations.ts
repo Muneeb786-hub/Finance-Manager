@@ -33,6 +33,7 @@ export const BudgetSchema = z.object({
 
 export const SavingsGoalSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  category: z.string().optional().nullable().default("General"),
   targetAmount: z.coerce.number().positive("Target amount must be greater than 0"),
   currentAmount: z.coerce.number().min(0).default(0),
   targetDate: z.string().optional().nullable(),
@@ -86,16 +87,7 @@ export const AccountDataWipeSchema = z.object({
 
 export const AssetSchema = z.object({
   name: z.string().min(1, "Asset name is required").max(100),
-  category: z.enum([
-    "CASH",
-    "BANK",
-    "GOLD",
-    "SILVER",
-    "CRYPTO",
-    "REAL_ESTATE",
-    "INVESTMENT",
-    "OTHER",
-  ]),
+  category: z.string().min(1, "Category is required").max(50),
   value: z.coerce.number().min(0, "Asset value cannot be negative"),
   quantity: z.coerce.number().optional().nullable(),
   unit: z.string().optional().nullable(),

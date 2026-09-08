@@ -60,6 +60,7 @@ export function GoalModal({
     resolver: zodResolver(SavingsGoalSchema),
     defaultValues: {
       title: "",
+      category: "General",
       targetAmount: 1000,
       currentAmount: 0,
       targetDate: "",
@@ -75,6 +76,7 @@ export function GoalModal({
     if (initialData) {
       reset({
         title: initialData.title,
+        category: initialData.category || "General",
         targetAmount: initialData.targetAmount,
         currentAmount: initialData.currentAmount,
         targetDate: initialData.targetDate
@@ -87,6 +89,7 @@ export function GoalModal({
     } else {
       reset({
         title: "",
+        category: "General",
         targetAmount: 1000,
         currentAmount: 0,
         targetDate: "",
@@ -161,6 +164,28 @@ export function GoalModal({
             {errors.title && (
               <p className="text-xs text-destructive">{errors.title.message}</p>
             )}
+          </div>
+
+          {/* Category - User Entered */}
+          <div className="space-y-1.5">
+            <Label htmlFor="category">Category (Type your own)</Label>
+            <Input
+              id="category"
+              placeholder="e.g. Emergency, Travel, Vehicle, Education, House, Gold..."
+              {...register("category")}
+            />
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {["Emergency", "Education", "Travel", "House", "Vehicle", "General"].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setValue("category", suggestion)}
+                  className="text-[11px] px-2 py-0.5 rounded-md border border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Amounts row */}

@@ -6,6 +6,7 @@ import { z } from "zod"
 
 const UpdateSavingsGoalSchema = z.object({
   title: z.string().min(1, "Title is required").optional(),
+  category: z.string().optional().nullable(),
   targetAmount: z.coerce.number().positive("Target amount must be greater than 0").optional(),
   targetDate: z.string().optional().nullable(),
   icon: z.string().optional(),
@@ -80,6 +81,7 @@ export async function PUT(
 
     const updateData: any = {}
     if (validation.data.title !== undefined) updateData.title = validation.data.title
+    if (validation.data.category !== undefined) updateData.category = validation.data.category ? validation.data.category.trim() : "General"
     if (validation.data.targetAmount !== undefined) updateData.targetAmount = validation.data.targetAmount
     if (validation.data.targetDate !== undefined) {
       updateData.targetDate = validation.data.targetDate ? new Date(validation.data.targetDate) : null

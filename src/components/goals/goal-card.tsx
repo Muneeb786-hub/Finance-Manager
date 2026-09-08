@@ -22,6 +22,7 @@ import {
 export interface GoalData {
   id: string
   title: string
+  category?: string | null
   targetAmount: number
   currentAmount: number
   targetDate?: string | null
@@ -80,6 +81,11 @@ export function GoalCard({
                 <h3 className="font-semibold text-base text-foreground truncate">
                   {goal.title}
                 </h3>
+                {goal.category && (
+                  <span className="inline-flex items-center rounded-md border border-border/80 bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {goal.category}
+                  </span>
+                )}
                 {isCompleted && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                     <Sparkles className="h-3 w-3" />

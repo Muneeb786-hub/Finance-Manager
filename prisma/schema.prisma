@@ -156,6 +156,7 @@ model SavingsGoal {
   userId        String
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   title         String
+  category      String?    @default("General")
   targetAmount  Float
   currentAmount Float      @default(0)
   targetDate    DateTime?

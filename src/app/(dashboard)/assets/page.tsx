@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,35 +13,28 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { formatCurrency } from "@/lib/utils"
 import {
-  Wallet,
-  Plus,
   Landmark,
+  Plus,
   Coins,
   Gem,
+  CircleDollarSign,
   Building2,
   TrendingUp,
-  CircleDollarSign,
+  Wallet,
   Edit2,
   Trash2,
   Loader2,
-  AlertCircle,
   Sparkles,
+  Tag,
 } from "lucide-react"
 import { toast } from "sonner"
 
 interface Asset {
   id: string
   name: string
-  category: "CASH" | "BANK" | "GOLD" | "SILVER" | "CRYPTO" | "REAL_ESTATE" | "INVESTMENT" | "OTHER"
+  category: string
   value: number
   quantity?: number | null
   unit?: string | null
@@ -50,16 +43,47 @@ interface Asset {
   updatedAt: string
 }
 
-const CATEGORY_CONFIG = {
-  CASH: { label: "Cash & Liquid", icon: CircleDollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  BANK: { label: "Bank Account", icon: Landmark, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-  GOLD: { label: "Physical Gold", icon: Coins, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/30" },
-  SILVER: { label: "Physical Silver", icon: Gem, color: "text-slate-400 dark:text-slate-300", bg: "bg-slate-500/10", border: "border-slate-500/20" },
-  CRYPTO: { label: "Crypto Asset", icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
-  REAL_ESTATE: { label: "Real Estate", icon: Building2, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
-  INVESTMENT: { label: "Investment / Stocks", icon: TrendingUp, color: "text-cyan-500", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
-  OTHER: { label: "Other Asset", icon: Wallet, color: "text-gray-500", bg: "bg-gray-500/10", border: "border-gray-500/20" },
+interface CategoryBreakdown {
+  category: string
+  total: number
+  count: number
+  percent: number
 }
+
+// Helper to choose dynamic colors/icons based on category name
+function getCategoryMeta(categoryName: string) {
+  const lower = (categoryName || "").toLowerCase()
+  if (lower.includes("gold")) {
+    return { icon: Coins, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/30" }
+  }
+  if (lower.includes("silver")) {
+    return { icon: Gem, color: "text-slate-400 dark:text-slate-300", bg: "bg-slate-500/10", border: "border-slate-500/30" }
+  }
+  if (lower.includes("cash") || lower.includes("liquid") || lower.includes("wallet")) {
+    return { icon: CircleDollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/30" }
+  }
+  if (lower.includes("bank") || lower.includes("checking") || lower.includes("saving")) {
+    return { icon: Landmark, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/30" }
+  }
+  if (lower.includes("real estate") || lower.includes("plot") || lower.includes("house") || lower.includes("property")) {
+    return { icon: Building2, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/30" }
+  }
+  if (lower.includes("crypto") || lower.includes("stock") || lower.includes("invest") || lower.includes("fund")) {
+    return { icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/30" }
+  }
+  return { icon: Wallet, color: "text-primary", bg: "bg-primary/10", border: "border-primary/30" }
+}
+
+const QUICK_CATEGORY_SUGGESTIONS = [
+  "Cash",
+  "Bank",
+  "Gold",
+  "Silver",
+  "Real Estate",
+  "Crypto",
+  "Vehicles",
+  "Stocks / Investments",
+]
 
 export default function AssetsPage() {
   const [data, setData] = React.useState<any>(null)
@@ -75,10 +99,10 @@ export default function AssetsPage() {
   // Form states
   const [formData, setFormData] = React.useState({
     name: "",
-    category: "GOLD" as Asset["category"],
+    category: "",
     value: "",
     quantity: "",
-    unit: "tola",
+    unit: "",
     notes: "",
   })
 
@@ -101,14 +125,21 @@ export default function AssetsPage() {
     fetchAssets()
   }, [fetchAssets])
 
-  const handleOpenAdd = (defaultCategory?: Asset["category"]) => {
+  const assets: Asset[] = data?.assets || []
+  const categoryBreakdown: CategoryBreakdown[] = data?.summary?.categoryBreakdown || []
+  const totalNetWorth = data?.summary?.totalNetWorth || 0
+
+  // Existing user categories for quick selection
+  const userExistingCategories = Array.from(new Set(assets.map((a) => a.category).filter(Boolean)))
+
+  const handleOpenAdd = (prefillCategory?: string) => {
     setEditingAsset(null)
     setFormData({
       name: "",
-      category: defaultCategory || "GOLD",
+      category: prefillCategory || "",
       value: "",
       quantity: "",
-      unit: defaultCategory === "GOLD" || defaultCategory === "SILVER" ? "tola" : "",
+      unit: prefillCategory?.toLowerCase().includes("gold") || prefillCategory?.toLowerCase().includes("silver") ? "tola" : "",
       notes: "",
     })
     setIsModalOpen(true)
@@ -133,6 +164,10 @@ export default function AssetsPage() {
       toast.error("Asset name is required")
       return
     }
+    if (!formData.category.trim()) {
+      toast.error("Category is required (e.g. Gold, Silver, Cash, Bank, etc.)")
+      return
+    }
     const val = parseFloat(formData.value)
     if (isNaN(val) || val < 0) {
       toast.error("Please enter a valid valuation amount")
@@ -143,7 +178,7 @@ export default function AssetsPage() {
     try {
       const payload = {
         name: formData.name.trim(),
-        category: formData.category,
+        category: formData.category.trim(),
         value: val,
         quantity: formData.quantity ? parseFloat(formData.quantity) : null,
         unit: formData.unit.trim() || null,
@@ -193,25 +228,15 @@ export default function AssetsPage() {
     }
   }
 
-  const summary = data?.summary || {
-    totalNetWorth: 0,
-    cashTotal: 0,
-    bankTotal: 0,
-    goldTotal: 0,
-    silverTotal: 0,
-    cryptoTotal: 0,
-    otherTotal: 0,
-    categoryBreakdown: [],
-  }
-
-  const assets: Asset[] = data?.assets || []
-
   const filteredAssets = assets.filter((a) => {
     if (activeFilter === "ALL") return true
-    if (activeFilter === "PRECIOUS_METALS") return a.category === "GOLD" || a.category === "SILVER"
-    if (activeFilter === "LIQUID") return a.category === "CASH" || a.category === "BANK"
-    return a.category === activeFilter
+    return a.category.toLowerCase() === activeFilter.toLowerCase()
   })
+
+  // Combined suggestions: User's existing categories first, then defaults
+  const allCategorySuggestions = Array.from(
+    new Set([...userExistingCategories, ...QUICK_CATEGORY_SUGGESTIONS])
+  )
 
   return (
     <div className="space-y-6 pb-14">
@@ -227,7 +252,7 @@ export default function AssetsPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Track and manage your physical gold, silver, bank accounts, liquid cash, and investments.
+            Track and manage all your assets and valuables. You can define any category yourself.
           </p>
         </div>
 
@@ -247,113 +272,88 @@ export default function AssetsPage() {
               Consolidated Net Worth
             </span>
             <div className="mt-1 text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-              {isLoading ? "..." : formatCurrency(summary.totalNetWorth)}
+              {isLoading ? "..." : formatCurrency(totalNetWorth)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Calculated across {assets.length} active holdings & registered accounts
+              Calculated across {assets.length} custom asset holdings
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
-              variant="outline"
+              onClick={() => handleOpenAdd()}
               size="sm"
-              onClick={() => handleOpenAdd("GOLD")}
-              className="gap-1.5 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs"
+              className="gap-1.5 shadow-sm text-xs"
             >
-              <Coins className="h-3.5 w-3.5" />
-              + Add Gold
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenAdd("SILVER")}
-              className="gap-1.5 border-slate-500/30 text-slate-600 dark:text-slate-300 hover:bg-slate-500/10 text-xs"
-            >
-              <Gem className="h-3.5 w-3.5" />
-              + Add Silver
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenAdd("CASH")}
-              className="gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 text-xs"
-            >
-              <CircleDollarSign className="h-3.5 w-3.5" />
-              + Add Cash
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenAdd("BANK")}
-              className="gap-1.5 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 text-xs"
-            >
-              <Landmark className="h-3.5 w-3.5" />
-              + Add Bank
+              <Plus className="h-3.5 w-3.5" />
+              + Add Any Asset
             </Button>
           </div>
         </div>
 
-        {/* Category breakdown pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border/60">
-          <div className="space-y-1">
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Coins className="h-3 w-3 text-amber-500" /> Physical Gold
-            </span>
-            <div className="text-base sm:text-lg font-bold text-foreground">
-              {formatCurrency(summary.goldTotal)}
-            </div>
+        {/* Dynamic Category Breakdown Cards - Generated purely from user's custom categories */}
+        {categoryBreakdown.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border/60">
+            {categoryBreakdown.map((item) => {
+              const meta = getCategoryMeta(item.category)
+              const Icon = meta.icon
+              return (
+                <div
+                  key={item.category}
+                  onClick={() => setActiveFilter(item.category)}
+                  className="p-3 rounded-xl border border-border/70 bg-card/60 hover:border-primary/50 cursor-pointer transition-all space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground font-medium truncate flex items-center gap-1.5">
+                      <Icon className={`h-3.5 w-3.5 ${meta.color} shrink-0`} />
+                      {item.category}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {item.count} item{item.count === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <div className="text-base font-bold text-foreground">
+                    {formatCurrency(item.total)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {item.percent}% of total net worth
+                  </div>
+                </div>
+              )
+            })}
           </div>
-          <div className="space-y-1">
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Gem className="h-3 w-3 text-slate-400" /> Physical Silver
-            </span>
-            <div className="text-base sm:text-lg font-bold text-foreground">
-              {formatCurrency(summary.silverTotal)}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Landmark className="h-3 w-3 text-blue-500" /> Bank Balances
-            </span>
-            <div className="text-base sm:text-lg font-bold text-foreground">
-              {formatCurrency(summary.bankTotal)}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <CircleDollarSign className="h-3 w-3 text-emerald-500" /> Cash & Liquid
-            </span>
-            <div className="text-base sm:text-lg font-bold text-foreground">
-              {formatCurrency(summary.cashTotal)}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        {[
-          { id: "ALL", label: "All Assets" },
-          { id: "PRECIOUS_METALS", label: "Gold & Silver" },
-          { id: "LIQUID", label: "Cash & Bank" },
-          { id: "CRYPTO", label: "Crypto" },
-          { id: "OTHER", label: "Other" },
-        ].map((tab) => (
+      {/* Dynamic Filter Tabs */}
+      {categoryBreakdown.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           <button
-            key={tab.id}
-            onClick={() => setActiveFilter(tab.id)}
+            onClick={() => setActiveFilter("ALL")}
             className={`px-3.5 py-1.5 rounded-lg font-medium transition-all ${
-              activeFilter === tab.id
+              activeFilter === "ALL"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-card border border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            {tab.label}
+            All Assets ({assets.length})
           </button>
-        ))}
-      </div>
+          {categoryBreakdown.map((c) => (
+            <button
+              key={c.category}
+              onClick={() => setActiveFilter(c.category)}
+              className={`px-3.5 py-1.5 rounded-lg font-medium transition-all ${
+                activeFilter.toLowerCase() === c.category.toLowerCase()
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {c.category} ({c.count})
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Assets Grid */}
       {isLoading ? (
@@ -372,13 +372,15 @@ export default function AssetsPage() {
         <Card className="border-border/80 shadow-sm border-dashed">
           <CardContent className="py-14 text-center flex flex-col items-center justify-center">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-              <Coins className="h-6 w-6" />
+              <Wallet className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-semibold text-foreground">No assets found in this view</h3>
+            <h3 className="text-base font-semibold text-foreground">
+              {activeFilter === "ALL" ? "No assets added yet" : `No assets found in "${activeFilter}"`}
+            </h3>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mt-1 mb-5">
-              Add your gold holdings, silver bars, bank accounts, or cash to track your complete portfolio.
+              Add your assets with whatever custom category you want (e.g. Gold, Silver, Cash, Bank, Real Estate, Crypto, etc.).
             </p>
-            <Button onClick={() => handleOpenAdd()} size="sm" className="gap-1.5">
+            <Button onClick={() => handleOpenAdd(activeFilter !== "ALL" ? activeFilter : undefined)} size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" /> Add Asset
             </Button>
           </CardContent>
@@ -386,8 +388,8 @@ export default function AssetsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAssets.map((asset) => {
-            const config = CATEGORY_CONFIG[asset.category] || CATEGORY_CONFIG.OTHER
-            const Icon = config.icon
+            const meta = getCategoryMeta(asset.category)
+            const Icon = meta.icon
             return (
               <Card
                 key={asset.id}
@@ -396,13 +398,14 @@ export default function AssetsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className={`p-2 rounded-xl ${config.bg} ${config.color}`}>
+                      <div className={`p-2 rounded-xl ${meta.bg} ${meta.color}`}>
                         <Icon className="h-5 w-5" />
                       </div>
                       <div>
                         <h4 className="font-semibold text-sm text-foreground">{asset.name}</h4>
-                        <span className="text-[11px] text-muted-foreground font-medium">
-                          {config.label}
+                        <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
+                          <Tag className="h-3 w-3 inline" />
+                          {asset.category}
                         </span>
                       </div>
                     </div>
@@ -457,54 +460,51 @@ export default function AssetsPage() {
           <DialogHeader>
             <DialogTitle>{editingAsset ? "Edit Asset" : "Add Asset to Net Worth"}</DialogTitle>
             <DialogDescription>
-              Record your gold, silver, bank accounts, liquid cash, or other valuables.
+              Enter any asset details. You can type any category yourself (e.g. Gold, Silver, Cash, Bank, Real Estate, etc.).
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSaveAsset} className="space-y-4 py-2">
-            {/* Category */}
+            {/* Category - Free User Input */}
             <div className="space-y-1.5">
-              <Label htmlFor="category">Asset Category</Label>
-              <Select
+              <Label htmlFor="category">Category (Type your own category)</Label>
+              <Input
+                id="category"
+                placeholder="e.g. Gold, Silver, Cash, Bank, Real Estate, Crypto, Car..."
                 value={formData.category}
-                onValueChange={(val: any) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    category: val,
-                    unit: val === "GOLD" || val === "SILVER" ? "tola" : prev.unit,
-                  }))
-                }
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GOLD">Physical Gold (Coins, Bars, Jewelry)</SelectItem>
-                  <SelectItem value="SILVER">Physical Silver (Bars, Coins)</SelectItem>
-                  <SelectItem value="CASH">Cash & Liquid (In hand, Safe)</SelectItem>
-                  <SelectItem value="BANK">Bank Account (Checking, Savings)</SelectItem>
-                  <SelectItem value="CRYPTO">Crypto (Bitcoin, Ethereum, etc.)</SelectItem>
-                  <SelectItem value="REAL_ESTATE">Real Estate / Property</SelectItem>
-                  <SelectItem value="INVESTMENT">Investment / Stocks</SelectItem>
-                  <SelectItem value="OTHER">Other Valuables</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                required
+                autoFocus
+              />
+
+              {/* Quick suggestions pills */}
+              <div className="pt-1">
+                <span className="text-[10px] text-muted-foreground font-medium">Or pick a suggestion:</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {allCategorySuggestions.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, category: cat }))}
+                      className={`text-[11px] px-2 py-0.5 rounded-md border transition-all ${
+                        formData.category.toLowerCase() === cat.toLowerCase()
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/50 border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Asset Name */}
             <div className="space-y-1.5">
-              <Label htmlFor="name">Asset Name</Label>
+              <Label htmlFor="name">Asset Name / Description</Label>
               <Input
                 id="name"
-                placeholder={
-                  formData.category === "GOLD"
-                    ? "e.g. 24K Gold Bar or 10 Tolas Coins"
-                    : formData.category === "SILVER"
-                    ? "e.g. 500g Silver Bullion"
-                    : formData.category === "BANK"
-                    ? "e.g. Meezan Bank / HBL Account"
-                    : "e.g. Emergency Cash Vault"
-                }
+                placeholder="e.g. 24K Gold Bars, Meezan Bank Savings, Plot in Bahria..."
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 required
@@ -519,7 +519,7 @@ export default function AssetsPage() {
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="5000.00"
+                placeholder="e.g. 5000.00"
                 value={formData.value}
                 onChange={(e) => setFormData((prev) => ({ ...prev, value: e.target.value }))}
                 required
@@ -544,7 +544,7 @@ export default function AssetsPage() {
                 <Label htmlFor="unit">Unit (Optional)</Label>
                 <Input
                   id="unit"
-                  placeholder="e.g. tola, grams, oz"
+                  placeholder="e.g. tola, grams, oz, coins"
                   value={formData.unit}
                   onChange={(e) => setFormData((prev) => ({ ...prev, unit: e.target.value }))}
                 />
@@ -556,7 +556,7 @@ export default function AssetsPage() {
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Input
                 id="notes"
-                placeholder="e.g. Stored in bank safe deposit box"
+                placeholder="e.g. Stored in safe, locker #42, etc."
                 value={formData.notes}
                 onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
               />

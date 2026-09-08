@@ -24,6 +24,7 @@ export default function GoalsPage() {
   })
   const [isLoading, setIsLoading] = React.useState(true)
   const [statusFilter, setStatusFilter] = React.useState<"ACTIVE" | "COMPLETED" | "ALL">("ACTIVE")
+  const [categoryFilter, setCategoryFilter] = React.useState<string>("ALL")
 
   // Modals state
   const [isGoalModalOpen, setIsGoalModalOpen] = React.useState(false)
@@ -62,10 +63,13 @@ export default function GoalsPage() {
     fetchGoals()
   }, [fetchGoals])
 
-  // Filter goals by tab
+  const userGoalCategories = Array.from(new Set(goals.map((g) => g.category).filter(Boolean))) as string[]
+
+  // Filter goals by tab & category
   const filteredGoals = goals.filter((g) => {
-    if (statusFilter === "ACTIVE") return g.status === "ACTIVE"
-    if (statusFilter === "COMPLETED") return g.status === "COMPLETED"
+    if (statusFilter === "ACTIVE" && g.status !== "ACTIVE") return false
+    if (statusFilter === "COMPLETED" && g.status !== "COMPLETED") return false
+    if (categoryFilter !== "ALL" && g.category?.toLowerCase() !== categoryFilter.toLowerCase()) return false
     return true
   })
 
@@ -104,37 +108,68 @@ export default function GoalsPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-        <button
-          onClick={() => setStatusFilter("ACTIVE")}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-            statusFilter === "ACTIVE"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          Active Goals ({summary.activeCount})
-        </button>
-        <button
-          onClick={() => setStatusFilter("COMPLETED")}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-            statusFilter === "COMPLETED"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          Completed ({summary.completedCount})
-        </button>
-        <button
-          onClick={() => setStatusFilter("ALL")}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-            statusFilter === "ALL"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          All ({summary.totalCount})
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setStatusFilter("ACTIVE")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              statusFilter === "ACTIVE"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            Active Goals ({summary.activeCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter("COMPLETED")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              statusFilter === "COMPLETED"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            Completed ({summary.completedCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter("ALL")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              statusFilter === "ALL"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            All ({summary.totalCount})
+          </button>
+        </div>
+
+        {/* User-defined category filter pills */}
+        {userGoalCategories.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+            <button
+              onClick={() => setCategoryFilter("ALL")}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                categoryFilter === "ALL"
+                  ? "bg-secondary text-secondary-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              All Categories
+            </button>
+            {userGoalCategories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                  categoryFilter.toLowerCase() === cat.toLowerCase()
+                    ? "bg-secondary text-secondary-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Goals Grid */}

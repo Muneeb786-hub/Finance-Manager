@@ -119,7 +119,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { title, targetAmount, currentAmount = 0, targetDate, icon = "target", color = "#3b82f6", notes } = validation.data
+    const { title, category, targetAmount, currentAmount = 0, targetDate, icon = "target", color = "#3b82f6", notes } = validation.data
 
     const isCompleted = currentAmount >= targetAmount
 
@@ -127,6 +127,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         title,
+        category: category ? category.trim() : "General",
         targetAmount,
         currentAmount,
         targetDate: targetDate ? new Date(targetDate) : null,
