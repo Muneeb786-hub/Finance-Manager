@@ -4,6 +4,7 @@ import * as React from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
+import { CurrencySwitcher } from "@/components/layout/currency-switcher"
 import { Button } from "@/components/ui/button"
 import { Bell, LogOut, User as UserIcon, Wallet, Menu, X } from "lucide-react"
 import { usePathname } from "next/navigation"
@@ -62,6 +63,7 @@ export function Navbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <CurrencySwitcher />
         <Link href="/notifications">
           <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground">
             <Bell className="h-4 w-4" />

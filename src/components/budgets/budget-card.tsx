@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import { Edit2, Trash2, AlertTriangle, CheckCircle, Flame } from "lucide-react"
 
 export interface BudgetData {
@@ -34,6 +35,7 @@ interface BudgetCardProps {
 }
 
 export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
+  const { format } = useCurrency()
   const displayPercent = Math.min(100, budget.percent)
 
   const getStatusBadge = () => {
@@ -88,7 +90,7 @@ export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
                 {budget.category?.name || "Category"}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Limit: {formatCurrency(budget.amount)} / month
+                Limit: {format(budget.amount)} / month
               </p>
             </div>
           </div>
@@ -120,9 +122,9 @@ export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="font-medium text-foreground">
-              {formatCurrency(budget.spent)}{" "}
+              {format(budget.spent)}{" "}
               <span className="text-muted-foreground font-normal">
-                spent of {formatCurrency(budget.amount)}
+                spent of {format(budget.amount)}
               </span>
             </span>
             <span className="font-mono font-medium text-foreground">
@@ -141,10 +143,10 @@ export function BudgetCard({ budget, onEdit, onDelete }: BudgetCardProps) {
             <span className="text-xs font-medium text-muted-foreground">
               {budget.status === "OVER_BUDGET" ? (
                 <span className="text-rose-600 dark:text-rose-400 font-semibold">
-                  +{formatCurrency(budget.spent - budget.amount)} over limit
+                  +{format(budget.spent - budget.amount)} over limit
                 </span>
               ) : (
-                <span>{formatCurrency(budget.remaining)} left</span>
+                <span>{format(budget.remaining)} left</span>
               )}
             </span>
           </div>

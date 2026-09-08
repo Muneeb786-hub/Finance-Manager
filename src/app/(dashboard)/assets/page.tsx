@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Landmark,
   Plus,
@@ -86,6 +87,7 @@ const QUICK_CATEGORY_SUGGESTIONS = [
 ]
 
 export default function AssetsPage() {
+  const { format } = useCurrency()
   const [data, setData] = React.useState<any>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [activeFilter, setActiveFilter] = React.useState<string>("ALL")
@@ -272,7 +274,7 @@ export default function AssetsPage() {
               Consolidated Net Worth
             </span>
             <div className="mt-1 text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-              {isLoading ? "..." : formatCurrency(totalNetWorth)}
+              {isLoading ? "..." : format(totalNetWorth)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -314,7 +316,7 @@ export default function AssetsPage() {
                     </span>
                   </div>
                   <div className="text-base font-bold text-foreground">
-                    {formatCurrency(item.total)}
+                    {format(item.total)}
                   </div>
                   <div className="text-[10px] text-muted-foreground">
                     {item.percent}% of total net worth
@@ -433,8 +435,8 @@ export default function AssetsPage() {
                   </div>
 
                   <div className="pt-1">
-                    <div className="text-2xl font-bold tracking-tight text-foreground">
-                      {formatCurrency(asset.value)}
+                    <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                      {format(asset.value)}
                     </div>
                     {asset.quantity && (
                       <div className="text-xs text-muted-foreground mt-0.5 font-medium">

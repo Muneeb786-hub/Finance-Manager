@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -46,6 +47,7 @@ export function MonthlySpendingModal({
   netFlow,
   spendingByCategory = [],
 }: MonthlySpendingModalProps) {
+  const { format } = useCurrency()
   const currentMonthName = new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric",
@@ -82,8 +84,8 @@ export function MonthlySpendingModal({
               <span className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-1">
                 <ArrowDownLeft className="h-3 w-3 text-emerald-500" /> Income
               </span>
-              <div className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(monthlyIncome)}
+              <div className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {format(monthlyIncome)}
               </div>
             </div>
 
@@ -91,8 +93,8 @@ export function MonthlySpendingModal({
               <span className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-1">
                 <ArrowUpRight className="h-3 w-3 text-rose-500" /> Outflow
               </span>
-              <div className="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400">
-                {formatCurrency(monthlyExpenses)}
+              <div className="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                {format(monthlyExpenses)}
               </div>
             </div>
 
@@ -101,14 +103,14 @@ export function MonthlySpendingModal({
                 <TrendingUp className="h-3 w-3 text-primary" /> Net Flow
               </span>
               <div
-                className={`text-sm sm:text-base font-bold ${
+                className={`text-sm sm:text-base font-bold tabular-nums ${
                   netFlow >= 0
                     ? "text-emerald-600 dark:text-emerald-400"
                     : "text-rose-600 dark:text-rose-400"
                 }`}
               >
                 {netFlow >= 0 ? "+" : ""}
-                {formatCurrency(netFlow)}
+                {format(netFlow)}
               </div>
             </div>
           </div>
@@ -166,7 +168,7 @@ export function MonthlySpendingModal({
                         {/* e.g. Rent = $800 (30%) */}
                         <div className="font-medium text-foreground text-right shrink-0">
                           <span className="font-mono font-bold">
-                            {formatCurrency(cat.value)}
+                            {format(cat.value)}
                           </span>{" "}
                           <span className="text-muted-foreground text-[11px] font-semibold">
                             ({cat.percentage}%)

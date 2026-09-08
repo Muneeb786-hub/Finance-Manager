@@ -3,6 +3,7 @@
 import * as React from "react"
 import { SessionProvider } from "next-auth/react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { CurrencyProvider } from "@/lib/currency-context"
 import { Toaster } from "sonner"
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -14,8 +15,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
-        <Toaster position="top-right" richColors />
+        <CurrencyProvider>
+          {children}
+          <Toaster position="top-right" richColors />
+        </CurrencyProvider>
       </NextThemesProvider>
     </SessionProvider>
   )

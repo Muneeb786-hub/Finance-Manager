@@ -8,10 +8,12 @@ import { BudgetDeleteModal } from "@/components/budgets/budget-delete-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import { PiggyBank, Plus, Copy, AlertCircle, AlertTriangle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function BudgetsPage() {
+  const { format } = useCurrency()
   const now = new Date()
   const [currentMonth, setCurrentMonth] = React.useState(now.getMonth() + 1)
   const [currentYear, setCurrentYear] = React.useState(now.getFullYear())
@@ -140,7 +142,7 @@ export default function BudgetsPage() {
                   You had expenses in {unbudgetedCategories.length} category
                   {unbudgetedCategories.length === 1 ? "" : "ies"} this month without a defined budget limit:{" "}
                   <span className="font-medium text-foreground">
-                    {unbudgetedCategories.map((c) => `${c.name} (${formatCurrency(c.spent)})`).join(", ")}
+                    {unbudgetedCategories.map((c) => `${c.name} (${format(c.spent)})`).join(", ")}
                   </span>
                 </p>
               </div>

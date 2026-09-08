@@ -17,6 +17,7 @@ import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard"
 import { PendingSyncBanner } from "@/components/bank-sync/pending-sync-banner"
 import { SimulateSyncModal } from "@/components/bank-sync/simulate-sync-modal"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Wallet,
   ArrowDownLeft,
@@ -30,6 +31,7 @@ import { Button } from "@/components/ui/button"
 
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const { format } = useCurrency()
   const [data, setData] = React.useState<any>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -144,7 +146,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Net Worth"
-          value={isLoading ? "..." : formatCurrency(metrics.totalBalance)}
+          value={isLoading ? "..." : format(metrics.totalBalance)}
           icon={Wallet}
           variant="default"
           href="/assets"
@@ -152,7 +154,7 @@ export default function DashboardPage() {
         />
         <MetricCard
           title="Monthly Income"
-          value={isLoading ? "..." : formatCurrency(metrics.currentMonthIncome)}
+          value={isLoading ? "..." : format(metrics.currentMonthIncome)}
           icon={ArrowDownLeft}
           variant="income"
           onClick={() => setIsSpendingModalOpen(true)}
@@ -160,7 +162,7 @@ export default function DashboardPage() {
         />
         <MetricCard
           title="Monthly Expenses"
-          value={isLoading ? "..." : formatCurrency(metrics.currentMonthExpenses)}
+          value={isLoading ? "..." : format(metrics.currentMonthExpenses)}
           icon={ArrowUpRight}
           variant="expense"
           onClick={() => setIsSpendingModalOpen(true)}
@@ -168,7 +170,7 @@ export default function DashboardPage() {
         />
         <MetricCard
           title="Net Cash Flow"
-          value={isLoading ? "..." : formatCurrency(metrics.currentMonthNetFlow)}
+          value={isLoading ? "..." : format(metrics.currentMonthNetFlow)}
           icon={TrendingUp}
           variant={isNetSurplus ? "income" : "expense"}
           onClick={() => setIsSpendingModalOpen(true)}

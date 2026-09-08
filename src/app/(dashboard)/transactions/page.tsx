@@ -8,6 +8,7 @@ import { TransactionModal } from "@/components/transactions/transaction-modal"
 import { DeleteConfirmModal } from "@/components/transactions/delete-confirm-modal"
 import { PendingSyncBanner } from "@/components/bank-sync/pending-sync-banner"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Plus,
   Trash2,
@@ -23,6 +24,7 @@ import {
 import { toast } from "sonner"
 
 export default function TransactionsPage() {
+  const { format } = useCurrency()
   const [transactions, setTransactions] = React.useState<any[]>([])
   const [categories, setCategories] = React.useState<any[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -351,7 +353,7 @@ export default function TransactionsPage() {
                             <ArrowUpRight className="h-3.5 w-3.5" />
                           )}
                           {isExpense ? "-" : "+"}
-                          {formatCurrency(t.amount)}
+                          {format(t.amount)}
                         </span>
                       </td>
                       <td className="p-3 text-right whitespace-nowrap">

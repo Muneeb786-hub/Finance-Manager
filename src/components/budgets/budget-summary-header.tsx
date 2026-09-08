@@ -4,6 +4,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import {
   ChevronLeft,
   ChevronRight,
@@ -59,6 +60,7 @@ export function BudgetSummaryHeader({
   onCopyPrevious,
   isCopying,
 }: BudgetSummaryHeaderProps) {
+  const { format } = useCurrency()
   const handlePrevMonth = () => {
     let m = currentMonth - 1
     let y = currentYear
@@ -170,7 +172,7 @@ export function BudgetSummaryHeader({
                 Total Budgeted
               </p>
               <p className="text-xl sm:text-2xl font-bold tracking-tight">
-                {formatCurrency(summary.totalBudgeted)}
+                {format(summary.totalBudgeted)}
               </p>
               <p className="text-[11px] text-muted-foreground">
                 {summary.budgetCount} category {summary.budgetCount === 1 ? "budget" : "budgets"}
@@ -189,7 +191,7 @@ export function BudgetSummaryHeader({
                 Total Spent
               </p>
               <p className="text-xl sm:text-2xl font-bold tracking-tight">
-                {formatCurrency(summary.totalSpent)}
+                {format(summary.totalSpent)}
               </p>
               <p className="text-[11px] text-muted-foreground">
                 {summary.overallPercent}% of total allocation
@@ -214,7 +216,7 @@ export function BudgetSummaryHeader({
                     : "text-emerald-600 dark:text-emerald-400"
                 }`}
               >
-                {formatCurrency(summary.totalRemaining)}
+                {format(summary.totalRemaining)}
               </p>
               <p className="text-[11px] text-muted-foreground">
                 {summary.totalSpent > summary.totalBudgeted
