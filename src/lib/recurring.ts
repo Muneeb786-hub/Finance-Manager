@@ -1,4 +1,4 @@
-import { multiplyMoney } from "./decimal"
+import { MoneyValue, multiplyMoney, toDecimal } from "./decimal"
 
 export type RecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY"
 
@@ -27,17 +27,17 @@ export function advanceNextRunDate(fromDate: Date, frequency: RecurrenceFrequenc
   return next
 }
 
-export function calculateMonthlyEquivalent(amount: number, frequency: RecurrenceFrequency): number {
+export function calculateMonthlyEquivalent(amount: MoneyValue, frequency: RecurrenceFrequency): number {
   switch (frequency) {
     case "DAILY":
-      return Math.round(amount * 30 * 100) / 100
+      return Math.round(multiplyMoney(amount, 30) * 100) / 100
     case "WEEKLY":
-      return Math.round((amount * 52) / 12 * 100) / 100
+      return Math.round(multiplyMoney(amount, 52 / 12) * 100) / 100
     case "MONTHLY":
-      return Math.round(amount * 100) / 100
+      return toDecimal(amount).toDecimalPlaces(2).toNumber()
     case "YEARLY":
-      return Math.round((amount / 12) * 100) / 100
+      return Math.round(multiplyMoney(amount, 1 / 12) * 100) / 100
     default:
-      return amount
+      return toDecimal(amount).toNumber()
   }
 }

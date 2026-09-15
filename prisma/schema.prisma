@@ -40,33 +40,33 @@ enum RecurrenceFrequency {
 }
 
 model User {
-  id                 String    @id @default(cuid())
+  id                 String   @id @default(cuid())
   name               String?
-  email              String    @unique
+  email              String   @unique
   passwordHash       String?
   image              String?
-  preferredCurrency  String    @default("USD")
-  timezone           String    @default("UTC")
-  onboardingComplete Boolean   @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  preferredCurrency  String   @default("USD")
+  timezone           String   @default("UTC")
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  accounts              Account[]
-  categories            Category[]
-  transactions          Transaction[]
-  budgets               Budget[]
-  savingsGoals          SavingsGoal[]
-  goalContributions     GoalContribution[]
-  recurringTransactions RecurringTransaction[]
-  notifications         Notification[]
-  financialInsights     FinancialInsight[]
+  accounts                Account[]
+  categories              Category[]
+  transactions            Transaction[]
+  budgets                 Budget[]
+  savingsGoals            SavingsGoal[]
+  goalContributions       GoalContribution[]
+  recurringTransactions   RecurringTransaction[]
+  notifications           Notification[]
+  financialInsights       FinancialInsight[]
   pendingSyncTransactions PendingSyncTransaction[]
-  linkedAccountSyncs    LinkedAccountSync[]
-  assets                Asset[]
-  syncWebhookToken      String?                   @unique
-  twoFactorEnabled      Boolean                   @default(false)
-  twoFactorSecret       String?
-  twoFactorBackupCodes  String[]                  @default([])
+  linkedAccountSyncs      LinkedAccountSync[]
+  assets                  Asset[]
+  syncWebhookToken        String?                  @unique
+  twoFactorEnabled        Boolean                  @default(false)
+  twoFactorSecret         String?
+  twoFactorBackupCodes    String[]                 @default([])
 
   @@index([email])
 }
@@ -77,14 +77,14 @@ model Account {
   user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   name           String
   type           AccountType @default(BANK_ACCOUNT)
-  openingBalance Float       @default(0)
+  openingBalance Decimal     @default(0) @db.Decimal(19, 4)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  transactions          Transaction[]
-  recurringTransactions RecurringTransaction[]
+  transactions            Transaction[]
+  recurringTransactions   RecurringTransaction[]
   pendingSyncTransactions PendingSyncTransaction[]
-  linkedAccountSyncs    LinkedAccountSync[]
+  linkedAccountSyncs      LinkedAccountSync[]
 
   @@index([userId])
 }
@@ -100,9 +100,9 @@ model Category {
   isDefault Boolean         @default(false)
   createdAt DateTime        @default(now())
 
-  transactions          Transaction[]
-  budgets               Budget[]
-  recurringTransactions RecurringTransaction[]
+  transactions            Transaction[]
+  budgets                 Budget[]
+  recurringTransactions   RecurringTransaction[]
   pendingSyncTransactions PendingSyncTransaction[]
 
   @@index([userId])
@@ -110,24 +110,26 @@ model Category {
 }
 
 model Transaction {
-  id                     String           @id @default(cuid())
+  id                     String                @id @default(cuid())
   userId                 String
-  user                   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId              String?
-  account                Account?         @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  account                Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
   categoryId             String
-  category               Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category               Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   type                   TransactionType
-  amount                 Float
+  amount                 Decimal               @db.Decimal(19, 4)
   date                   DateTime
   description            String
-  paymentMethod          String?          @default("OTHER")
-  tags                   String[]         @default([])
-  isRecurring            Boolean          @default(false)
+  paymentMethod          String?               @default("OTHER")
+  tags                   String[]              @default([])
+  isRecurring            Boolean               @default(false)
   recurringTransactionId String?
   recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
+  occurrenceKey          String?               @unique
+  importFingerprint      String?               @unique
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -140,10 +142,10 @@ model Budget {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   categoryId     String
   category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  amount         Float
+  amount         Decimal  @db.Decimal(19, 4)
   month          Int
   year           Int
-  alertThreshold Float    @default(80)
+  alertThreshold Decimal  @default(80) @db.Decimal(5, 2)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -157,8 +159,8 @@ model SavingsGoal {
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   title         String
   category      String?    @default("General")
-  targetAmount  Float
-  currentAmount Float      @default(0)
+  targetAmount  Decimal    @db.Decimal(19, 4)
+  currentAmount Decimal    @default(0) @db.Decimal(19, 4)
   targetDate    DateTime?
   icon          String     @default("target")
   color         String     @default("#3b82f6")
@@ -178,7 +180,7 @@ model GoalContribution {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalId    String
   goal      SavingsGoal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  amount    Float
+  amount    Decimal          @db.Decimal(19, 4)
   type      ContributionType @default(CONTRIBUTION)
   date      DateTime         @default(now())
   note      String?
@@ -188,27 +190,27 @@ model GoalContribution {
 }
 
 model RecurringTransaction {
-  id            String              @id @default(cuid())
-  userId        String
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoryId    String
-  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  accountId     String?
-  account       Account?            @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  type          TransactionType
-  amount        Float
-  description   String
-  paymentMethod String?             @default("OTHER")
-  frequency     RecurrenceFrequency
-  startDate     DateTime
-  nextRunDate   DateTime
-  endDate       DateTime?
-  isActive      Boolean             @default(true)
-  isSubscription Boolean            @default(false)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id             String              @id @default(cuid())
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId     String
+  category       Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  accountId      String?
+  account        Account?            @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  type           TransactionType
+  amount         Decimal             @db.Decimal(19, 4)
+  description    String
+  paymentMethod  String?             @default("OTHER")
+  frequency      RecurrenceFrequency
+  startDate      DateTime
+  nextRunDate    DateTime
+  endDate        DateTime?
+  isActive       Boolean             @default(true)
+  isSubscription Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
-  transactions  Transaction[]
+  transactions Transaction[]
 
   @@index([userId, isActive])
   @@index([userId, isSubscription])
@@ -248,23 +250,26 @@ enum SyncStatus {
 }
 
 model PendingSyncTransaction {
-  id                  String       @id @default(cuid())
+  id                  String     @id @default(cuid())
   userId              String
-  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId           String?
-  account             Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  account             Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
   merchant            String
-  amount              Float
-  currency            String       @default("PKR")
+  amount              Decimal    @db.Decimal(19, 4)
+  currency            String     @default("PKR")
   suggestedCategoryId String?
-  suggestedCategory   Category?    @relation(fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
-  channel             String       @default("CARD") // "EASYPAISA", "JAZZCASH", "CARD", "BANK"
-  status              SyncStatus   @default(PENDING)
+  suggestedCategory   Category?  @relation(fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
+  channel             String     @default("CARD") // "EASYPAISA", "JAZZCASH", "CARD", "BANK"
+  status              SyncStatus @default(PENDING)
   rawAlert            String?
   transactionId       String?
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  sourceFingerprint   String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
+  @@unique([userId, sourceFingerprint])
+  @@unique([transactionId])
   @@index([userId, status])
 }
 
@@ -274,10 +279,10 @@ model LinkedAccountSync {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId    String?
   account      Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  provider     String    // "EASYPAISA", "JAZZCASH", "MEEZAN_BANK", "HBL", "BANK_ALFALAH", "SADAPAY", "NAYAPAY", "CARD"
+  provider     String // "EASYPAISA", "JAZZCASH", "MEEZAN_BANK", "HBL", "BANK_ALFALAH", "SADAPAY", "NAYAPAY", "CARD"
   accountName  String
-  identifier   String    // e.g. "03001234567" or "ending in 4242"
-  senderId     String?   // e.g. "3737", "8558", "MeezanBank"
+  identifier   String // e.g. "03001234567" or "ending in 4242"
+  senderId     String? // e.g. "3737", "8558", "MeezanBank"
   isActive     Boolean   @default(true)
   lastSyncedAt DateTime?
   createdAt    DateTime  @default(now())
@@ -290,11 +295,11 @@ model Asset {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String   // e.g. "Physical Gold (24k)", "Silver Bullion", "Emergency Cash", "Meezan Bank"
-  category  String   // "CASH", "BANK", "GOLD", "SILVER", "CRYPTO", "REAL_ESTATE", "INVESTMENT", "OTHER"
-  value     Float    // Valuation / balance
-  quantity  Float?   // Optional e.g. 10
-  unit      String?  // Optional e.g. "tola", "grams", "oz", "coins"
+  name      String // e.g. "Physical Gold (24k)", "Silver Bullion", "Emergency Cash", "Meezan Bank"
+  category  String // "CASH", "BANK", "GOLD", "SILVER", "CRYPTO", "REAL_ESTATE", "INVESTMENT", "OTHER"
+  value     Decimal  @db.Decimal(19, 4) // Valuation / balance
+  quantity  Decimal? @db.Decimal(30, 12) // Optional e.g. 10
+  unit      String? // Optional e.g. "tola", "grams", "oz", "coins"
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
