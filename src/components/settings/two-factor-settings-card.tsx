@@ -28,6 +28,7 @@ import {
   Download,
 } from "lucide-react"
 import { toast } from "sonner"
+import Image from "next/image"
 
 export function TwoFactorSettingsCard() {
   const [isEnabled, setIsEnabled] = React.useState(false)
@@ -88,8 +89,8 @@ export function TwoFactorSettingsCard() {
       if (!res.ok) throw new Error("Failed to initialize 2FA setup")
       const data = await res.json()
       setSetupData(data)
-    } catch (err: any) {
-      setSetupError(err.message || "Failed to initialize 2FA")
+    } catch (err) {
+      setSetupError(err instanceof Error ? err.message : "Failed to initialize 2FA")
     }
   }
 
@@ -123,8 +124,8 @@ export function TwoFactorSettingsCard() {
       setIsEnabled(true)
       setBackupCodesCount(data.backupCodes?.length || 8)
       toast.success("Two-Factor Authentication is now enabled!")
-    } catch (err: any) {
-      setSetupError(err.message || "Verification code is invalid")
+    } catch (err) {
+      setSetupError(err instanceof Error ? err.message : "Verification code is invalid")
     } finally {
       setIsVerifying(false)
     }
@@ -161,8 +162,8 @@ export function TwoFactorSettingsCard() {
       setDisablePassword("")
       setDisableCode("")
       toast.info("Two-Factor Authentication has been disabled")
-    } catch (err: any) {
-      setDisableError(err.message || "Could not disable 2FA")
+    } catch (err) {
+      setDisableError(err instanceof Error ? err.message : "Could not disable 2FA")
     } finally {
       setIsDisabling(false)
     }
@@ -301,9 +302,11 @@ export function TwoFactorSettingsCard() {
               {/* QR Code Container */}
               <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-border shadow-xs">
                 {setupData?.qrCodeDataUrl ? (
-                  <img
+                  <Image
                     src={setupData.qrCodeDataUrl}
                     alt="2FA QR Code"
+                    width={176}
+                    height={176}
                     className="w-44 h-44 rounded-lg object-contain"
                   />
                 ) : (

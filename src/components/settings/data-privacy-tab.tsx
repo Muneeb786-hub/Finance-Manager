@@ -53,10 +53,11 @@ export function DataPrivacyTab({ onDataWiped }: DataPrivacyTabProps) {
   }
 
   const handleSeedDemoData = async () => {
+    if (!window.confirm("Reset all current financial records and replace them with the deterministic demo workspace?")) return
     setIsSeedingDemo(true)
     setSeedSuccess(false)
     try {
-      const res = await fetch("/api/onboarding/seed-demo", { method: "POST" })
+      const res = await fetch("/api/onboarding/reset-demo", { method: "POST" })
       if (res.ok) {
         setSeedSuccess(true)
         onDataWiped()
@@ -160,9 +161,9 @@ export function DataPrivacyTab({ onDataWiped }: DataPrivacyTabProps) {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-card">
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-foreground">Populate Realistic Sample Records</h4>
+              <h4 className="text-sm font-semibold text-foreground">Reset Demo Workspace</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Appends 3 months of salary, groceries, utilities, rent, active budgets, and savings milestones so all charts and health indicators display live metrics.
+                Replaces current financial records with a repeatable three-month portfolio dataset. Your login and security settings remain unchanged.
               </p>
             </div>
 
@@ -173,7 +174,7 @@ export function DataPrivacyTab({ onDataWiped }: DataPrivacyTabProps) {
               className="h-9 gap-1.5 text-xs shrink-0 shadow-xs"
             >
               <Sparkles className="h-4 w-4" />
-              {isSeedingDemo ? "Seeding..." : "Load Sample Sandbox"}
+              {isSeedingDemo ? "Resetting..." : "Reset Demo Workspace"}
             </Button>
           </div>
         </CardContent>

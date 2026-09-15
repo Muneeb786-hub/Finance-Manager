@@ -54,8 +54,8 @@ export function DeleteConfirmModal({
 
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete")
     } finally {
       setIsDeleting(false)
     }

@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Personal Finance Manager | Student Portfolio",
   description: "A secure, modern personal finance manager dashboard to track income, expenses, budgets, savings goals, recurring transactions, and educational financial insights.",
+  icons: { icon: "/finance-manager-icon.svg", apple: "/icon-192.png" },
 }
 
 export default function RootLayout({

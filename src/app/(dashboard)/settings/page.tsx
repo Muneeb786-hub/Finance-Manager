@@ -9,10 +9,11 @@ import { CategoriesSettingsTab, CategoryRecord } from "@/components/settings/cat
 import { DataPrivacyTab } from "@/components/settings/data-privacy-tab"
 
 type SettingsTab = "PROFILE" | "ACCOUNTS" | "CATEGORIES" | "DATA"
+type ProfileRecord = { id: string; name: string; email: string; preferredCurrency: string; timezone: string }
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("PROFILE")
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<ProfileRecord | null>(null)
   const [accounts, setAccounts] = useState<AccountRecord[]>([])
   const [categories, setCategories] = useState<CategoryRecord[]>([])
   const [loading, setLoading] = useState(true)

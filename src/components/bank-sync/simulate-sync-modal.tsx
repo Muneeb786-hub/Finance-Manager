@@ -23,6 +23,14 @@ interface SimulateSyncModalProps {
   onSyncTriggered?: () => void
 }
 
+type SyncChannel = "CARD" | "EASYPAISA" | "JAZZCASH" | "BANK"
+interface DemoSyncPayload {
+  merchant?: string
+  amount?: number
+  channel?: SyncChannel
+  rawText?: string
+}
+
 export function SimulateSyncModal({
   isOpen,
   onClose,
@@ -35,7 +43,7 @@ export function SimulateSyncModal({
   // Fully editable fields
   const [merchant, setMerchant] = React.useState("")
   const [amount, setAmount] = React.useState("")
-  const [channel, setChannel] = React.useState<"CARD" | "EASYPAISA" | "JAZZCASH" | "BANK">("CARD")
+  const [channel, setChannel] = React.useState<SyncChannel>("CARD")
   const [smsText, setSmsText] = React.useState("")
 
   React.useEffect(() => {
@@ -48,7 +56,7 @@ export function SimulateSyncModal({
     }
   }, [isOpen])
 
-  const triggerSync = async (payload: any) => {
+  const triggerSync = async (payload: DemoSyncPayload) => {
     setIsSubmitting(true)
     try {
       const res = await fetch("/api/bank-sync", {
@@ -69,8 +77,8 @@ export function SimulateSyncModal({
       window.dispatchEvent(new CustomEvent("bank-sync-updated"))
       if (onSyncTriggered) onSyncTriggered()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Simulation failed")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Simulation failed")
     } finally {
       setIsSubmitting(false)
     }
@@ -107,10 +115,10 @@ export function SimulateSyncModal({
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary mb-1">
               <Zap className="h-5 w-5" />
-              <DialogTitle className="text-xl">Sync Card / Bank Charge</DialogTitle>
+              <DialogTitle className="text-xl">Demo SMS Sync</DialogTitle>
             </div>
             <DialogDescription className="text-xs">
-              Enter any transaction details or paste a bank SMS to simulate real-time charge detection.
+              Portfolio simulator only: paste sample SMS text or enter a fictional charge. No bank is connected.
             </DialogDescription>
           </DialogHeader>
 
@@ -183,7 +191,7 @@ export function SimulateSyncModal({
                   <select
                     id="channel"
                     value={channel}
-                    onChange={(e) => setChannel(e.target.value as any)}
+                    onChange={(e) => setChannel(e.target.value as SyncChannel)}
                     className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="CARD">Credit / Debit Card</option>
@@ -267,7 +275,7 @@ export function SimulateSyncModal({
               className="text-xs text-primary hover:underline flex items-center gap-1 font-medium self-start sm:self-auto"
             >
               <Smartphone className="h-3.5 w-3.5" />
-              <span>Link Bank / Wallet &amp; Webhook</span>
+              <span>Configure Demo Source &amp; Webhook</span>
             </button>
 
             <Button

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Finance Manager wallet</title>
+  <rect width="512" height="512" rx="112" fill="#059669"/>
+  <path d="M112 150c0-28 22-50 50-50h224c8 0 14 6 14 14v48H162c-11 0-20 9-20 20s9 20 20 20h238v196c0 8-6 14-14 14H162c-28 0-50-22-50-50V150Z" fill="#fff"/>
+  <path d="M328 244h92c11 0 20 9 20 20v84c0 11-9 20-20 20h-92c-34 0-62-28-62-62s28-62 62-62Z" fill="#064e3b"/>
+  <circle cx="330" cy="306" r="16" fill="#a7f3d0"/>
+</svg>

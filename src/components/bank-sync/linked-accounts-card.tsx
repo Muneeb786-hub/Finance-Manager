@@ -82,8 +82,8 @@ export function LinkedAccountsCard({ existingLedgerAccounts = [] }: LinkedAccoun
       if (!res.ok) throw new Error("Failed to unlink")
       toast.info(`Unlinked ${name}`)
       setLinkedAccounts((prev) => prev.filter((a) => a.id !== id))
-    } catch (err: any) {
-      toast.error(err.message || "Failed to unlink account")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to unlink account")
     } finally {
       setUnlinkingId(null)
     }
@@ -109,11 +109,11 @@ export function LinkedAccountsCard({ existingLedgerAccounts = [] }: LinkedAccoun
               <div className="flex items-center gap-2">
                 <Radio className="h-5 w-5 text-emerald-500 animate-pulse" />
                 <CardTitle className="text-base font-semibold">
-                  Linked Banks &amp; Mobile Wallets (SMS Sync)
+                  Demo SMS Sync Sources
                 </CardTitle>
               </div>
               <CardDescription className="text-xs">
-                Link Easypaisa, JazzCash, Meezan Bank, or Cards to automatically detect real-time transaction alerts
+                Configure fictional sources used by the portfolio SMS/webhook simulator; no bank connection is made
               </CardDescription>
             </div>
             <Button
@@ -122,7 +122,7 @@ export function LinkedAccountsCard({ existingLedgerAccounts = [] }: LinkedAccoun
               className="h-8 gap-1.5 text-xs shadow-xs self-start sm:self-auto"
             >
               <Plus className="h-3.5 w-3.5" />
-              Link Wallet or Bank
+              Add Demo Source
             </Button>
           </div>
         </CardHeader>
@@ -138,7 +138,7 @@ export function LinkedAccountsCard({ existingLedgerAccounts = [] }: LinkedAccoun
               <Smartphone className="h-8 w-8 mx-auto text-muted-foreground/60" />
               <p className="text-xs font-semibold text-foreground">No Wallets or Cards Linked Yet</p>
               <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-                Click &quot;Link Wallet or Bank&quot; to connect your Easypaisa (3737), JazzCash (8558), or Meezan Bank account.
+                Add a fictional wallet, card, or bank source to demonstrate SMS alert matching.
               </p>
             </div>
           ) : (

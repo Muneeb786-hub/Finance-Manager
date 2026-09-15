@@ -129,7 +129,7 @@ export function LinkWalletModal({
       setIdentifier("")
       setSelectedAccountId("")
     }
-  }, [isOpen, selectedProviderId])
+  }, [isOpen, selectedProviderId, selectedProvider.name])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -160,8 +160,8 @@ export function LinkWalletModal({
       toast.success(`${selectedProvider.name} linked successfully!`)
       if (onAccountLinked) onAccountLinked()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to link account")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to link account")
     } finally {
       setIsSubmitting(false)
     }
@@ -173,10 +173,10 @@ export function LinkWalletModal({
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary">
             <Smartphone className="h-5 w-5" />
-            <DialogTitle className="text-lg">Link Bank or Digital Wallet</DialogTitle>
+            <DialogTitle className="text-lg">Add Demo SMS Source</DialogTitle>
           </div>
           <DialogDescription className="text-xs">
-            Connect your Easypaisa, JazzCash, Meezan Bank, or card to automatically track spending from bank alerts.
+            Configure a fictional provider identity for the portfolio simulator. This does not connect to a real bank or wallet.
           </DialogDescription>
         </DialogHeader>
 

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import type { TransactionDto } from "@/types/api"
 
 type TransactionFormValues = z.infer<typeof TransactionSchema>
 
@@ -38,7 +39,7 @@ interface TransactionModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  initialData?: any | null
+  initialData?: TransactionDto | null
 }
 
 export function TransactionModal({
@@ -149,8 +150,8 @@ export function TransactionModal({
       }
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setIsSubmitting(false)
     }

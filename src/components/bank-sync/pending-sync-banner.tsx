@@ -107,7 +107,7 @@ export function PendingSyncBanner({ onTransactionApproved }: PendingSyncBannerPr
       const isRecurring = !!repeatMonthlyMap[item.id]
       const isCurrentlyEditing = editingId === item.id
 
-      const payload: any = { isRecurring }
+      const payload: { isRecurring: boolean; merchant?: string; amount?: number; categoryId?: string } = { isRecurring }
       if (isCurrentlyEditing) {
         if (editMerchant.trim()) payload.merchant = editMerchant.trim()
         if (editAmount && parseFloat(editAmount) > 0) payload.amount = parseFloat(editAmount)
@@ -137,8 +137,8 @@ export function PendingSyncBanner({ onTransactionApproved }: PendingSyncBannerPr
       setItems((prev) => prev.filter((i) => i.id !== item.id))
       setEditingId(null)
       if (onTransactionApproved) onTransactionApproved()
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setProcessingId(null)
     }
@@ -156,8 +156,8 @@ export function PendingSyncBanner({ onTransactionApproved }: PendingSyncBannerPr
       toast.info(`Dismissed ${item.merchant} charge`)
       setItems((prev) => prev.filter((i) => i.id !== item.id))
       if (editingId === item.id) cancelEditing()
-    } catch (err: any) {
-      toast.error(err.message || "Could not dismiss")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not dismiss")
     } finally {
       setProcessingId(null)
     }
