@@ -1,9 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    serverComponentsExternalPackages: ["@prisma/client", "bcryptjs"]
-  }
+  allowedDevOrigins: ["127.0.0.1"],
+  serverExternalPackages: ["@prisma/client", "bcryptjs"]
 };
 
 export default nextConfig;

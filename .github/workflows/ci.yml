@@ -2,14 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ main, 'milestone-*' ]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  build-and-test:
+  verify:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:16-alpine
@@ -18,44 +15,30 @@ jobs:
           POSTGRES_PASSWORD: postgrespassword
           POSTGRES_DB: finance_manager_test
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+    env:
+      DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5433/finance_manager_test?schema=public
+      NEXTAUTH_URL: http://127.0.0.1:3004
+      NEXTAUTH_SECRET: ci-nextauth-secret-at-least-32-characters
+      TWO_FACTOR_ENCRYPTION_KEY: ci-two-factor-key-at-least-32-characters
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Prisma Generate
-        run: npx prisma generate
-        env:
-          DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/finance_manager_test?schema=public"
-
-      - name: Run Linting
-        run: npm run lint
-
-      - name: Run Unit Tests
-        run: npm test
-        env:
-          DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/finance_manager_test?schema=public"
-          NEXTAUTH_SECRET: "ci-test-secret-at-least-32-characters-long"
-          NEXTAUTH_URL: "http://localhost:3000"
-
-      - name: Build Application
-        run: npm run build
-        env:
-          DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/finance_manager_test?schema=public"
-          NEXTAUTH_SECRET: "ci-test-secret-at-least-32-characters-long"
-          NEXTAUTH_URL: "http://localhost:3000"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma validate
+      - run: npx prisma migrate deploy
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
