@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { AccountDataWipeSchema } from "@/lib/validations"
+import { clearUserFinancialData } from "@/lib/user-data"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -24,6 +25,9 @@ export async function GET() {
       recurring,
       insights,
       notifications,
+      assets,
+      pendingSyncTransactions,
+      linkedAccountSyncs,
     ] = await Promise.all([
       db.user.findUnique({
         where: { id: userId },
@@ -45,9 +49,14 @@ export async function GET() {
       db.recurringTransaction.findMany({ where: { userId } }),
       db.financialInsight.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
       db.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+      db.asset.findMany({ where: { userId } }),
+      db.pendingSyncTransaction.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+      db.linkedAccountSync.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
     ])
 
     const exportData = {
+      format: "finance-manager-backup",
+      version: 2,
       exportedAt: new Date().toISOString(),
       user,
       accounts,
@@ -59,6 +68,9 @@ export async function GET() {
       recurringTransactions: recurring,
       financialInsights: insights,
       notifications,
+      assets,
+      pendingSyncTransactions,
+      linkedAccountSyncs,
     }
 
     return new NextResponse(JSON.stringify(exportData, null, 2), {
@@ -93,17 +105,7 @@ export async function DELETE(request: Request) {
     }
 
     // Execute atomic deletion of all financial records
-    await db.$transaction([
-      db.goalContribution.deleteMany({ where: { userId } }),
-      db.savingsGoal.deleteMany({ where: { userId } }),
-      db.budget.deleteMany({ where: { userId } }),
-      db.transaction.deleteMany({ where: { userId } }),
-      db.recurringTransaction.deleteMany({ where: { userId } }),
-      db.financialInsight.deleteMany({ where: { userId } }),
-      db.notification.deleteMany({ where: { userId } }),
-      db.account.deleteMany({ where: { userId } }),
-      db.category.deleteMany({ where: { userId, isDefault: false } }),
-    ])
+    await db.$transaction((tx) => clearUserFinancialData(tx, userId, { resetOnboarding: true, clearSyncToken: true }))
 
     return NextResponse.json({
       message: "All financial data wiped successfully. User profile and default categories retained.",

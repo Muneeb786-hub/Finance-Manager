@@ -4,6 +4,24 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { TransactionSchema } from "@/lib/validations"
 import { Prisma } from "@prisma/client"
+import { z } from "zod"
+
+const TransactionQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  search: z.string().max(200).optional(),
+  type: z.enum(["INCOME", "EXPENSE"]).optional(),
+  categoryId: z.string().min(1).optional(),
+  accountId: z.string().min(1).optional(),
+  paymentMethod: z.string().max(50).optional(),
+  tag: z.string().max(100).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  minAmount: z.coerce.number().finite().min(0).optional(),
+  maxAmount: z.coerce.number().finite().min(0).optional(),
+  sortBy: z.enum(["date", "amount", "type", "category"]).default("date"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+})
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -14,22 +32,12 @@ export async function GET(req: Request) {
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
 
-  const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
-  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10")))
+  const parsedQuery = TransactionQuerySchema.safeParse(Object.fromEntries(searchParams.entries()))
+  if (!parsedQuery.success) {
+    return NextResponse.json({ message: "Invalid transaction query", errors: parsedQuery.error.flatten().fieldErrors }, { status: 400 })
+  }
+  const { page, limit, search, type, categoryId, accountId, paymentMethod, tag, startDate, endDate, minAmount, maxAmount, sortBy, sortOrder } = parsedQuery.data
   const skip = (page - 1) * limit
-
-  const search = searchParams.get("search")
-  const type = searchParams.get("type") as "INCOME" | "EXPENSE" | null
-  const categoryId = searchParams.get("categoryId")
-  const accountId = searchParams.get("accountId")
-  const paymentMethod = searchParams.get("paymentMethod")
-  const tag = searchParams.get("tag")
-  const startDate = searchParams.get("startDate")
-  const endDate = searchParams.get("endDate")
-  const minAmount = searchParams.get("minAmount")
-  const maxAmount = searchParams.get("maxAmount")
-  const sortBy = searchParams.get("sortBy") || "date"
-  const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc"
 
   const where: Prisma.TransactionWhereInput = {
     userId,
@@ -41,16 +49,16 @@ export async function GET(req: Request) {
     ...(startDate || endDate
       ? {
           date: {
-            ...(startDate ? { gte: new Date(startDate) } : {}),
-            ...(endDate ? { lte: new Date(endDate) } : {}),
+            ...(startDate ? { gte: startDate } : {}),
+            ...(endDate ? { lte: endDate } : {}),
           },
         }
       : {}),
     ...(minAmount || maxAmount
       ? {
           amount: {
-            ...(minAmount ? { gte: parseFloat(minAmount) } : {}),
-            ...(maxAmount ? { lte: parseFloat(maxAmount) } : {}),
+            ...(minAmount !== undefined ? { gte: minAmount } : {}),
+            ...(maxAmount !== undefined ? { lte: maxAmount } : {}),
           },
         }
       : {}),
@@ -66,7 +74,7 @@ export async function GET(req: Request) {
   }
 
   // Determine sorting orderBy
-  let orderBy: any = [{ date: sortOrder }, { createdAt: "desc" }]
+  let orderBy: Prisma.TransactionOrderByWithRelationInput[] = [{ date: sortOrder }, { createdAt: "desc" }]
   if (sortBy === "amount") {
     orderBy = [{ amount: sortOrder }, { createdAt: "desc" }]
   } else if (sortBy === "type") {

@@ -10,7 +10,7 @@ const UpdateNotificationSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -18,7 +18,7 @@ export async function PATCH(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.notification.findUnique({
@@ -49,7 +49,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -57,7 +57,7 @@ export async function DELETE(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.notification.findUnique({

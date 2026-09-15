@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { BudgetSchema } from "@/lib/validations"
 import { addMoney, subtractMoney, calculatePercentage, getBudgetStatus } from "@/lib/decimal"
+import { getZonedMonthRange, getZonedYearMonth } from "@/lib/dates"
+import { z } from "zod"
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -14,13 +16,17 @@ export async function GET(req: Request) {
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
 
-  const now = new Date()
-  const month = parseInt(searchParams.get("month") || (now.getMonth() + 1).toString(), 10)
-  const year = parseInt(searchParams.get("year") || now.getFullYear().toString(), 10)
-
   try {
-    const startOfMonth = new Date(year, month - 1, 1)
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999)
+    const profile = await db.user.findUnique({ where: { id: userId }, select: { timezone: true } })
+    const timezone = profile?.timezone || "UTC"
+    const current = getZonedYearMonth(new Date(), timezone)
+    const period = z.object({ month: z.coerce.number().int().min(1).max(12), year: z.coerce.number().int().min(2020).max(2100) }).safeParse({
+      month: searchParams.get("month") || current.month,
+      year: searchParams.get("year") || current.year,
+    })
+    if (!period.success) return NextResponse.json({ message: "Invalid budget period" }, { status: 400 })
+    const { month, year } = period.data
+    const { start: startOfMonth, end: endOfMonth } = getZonedMonthRange(year, month, timezone)
 
     // 1. Fetch user budgets for the requested month & year
     const budgets = await db.budget.findMany({
@@ -153,12 +159,9 @@ export async function POST(req: Request) {
 
     const { categoryId, amount, month, year, alertThreshold } = validation.data
 
-    // Verify category belongs to user or is default
+    // Default categories are copied per user, so every submitted relation is tenant-owned.
     const category = await db.category.findFirst({
-      where: {
-        id: categoryId,
-        OR: [{ userId }, { isDefault: true }],
-      },
+      where: { id: categoryId, userId, type: "EXPENSE" },
     })
 
     if (!category) {

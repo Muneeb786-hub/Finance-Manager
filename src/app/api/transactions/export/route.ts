@@ -3,6 +3,20 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { Prisma } from "@prisma/client"
+import { z } from "zod"
+
+const ExportFiltersSchema = z.object({
+  type: z.enum(["INCOME", "EXPENSE"]).optional(),
+  categoryId: z.string().min(1).optional(),
+  accountId: z.string().min(1).optional(),
+  paymentMethod: z.string().max(50).optional(),
+  tag: z.string().max(100).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  minAmount: z.coerce.number().finite().min(0).optional(),
+  maxAmount: z.coerce.number().finite().min(0).optional(),
+  search: z.string().max(200).optional(),
+})
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -13,7 +27,11 @@ export async function POST(req: Request) {
   const userId = (session.user as any).id
 
   try {
-    const filters = await req.json().catch(() => ({}))
+    const parsedFilters = ExportFiltersSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsedFilters.success) {
+      return NextResponse.json({ message: "Invalid export filters", errors: parsedFilters.error.flatten().fieldErrors }, { status: 400 })
+    }
+    const filters = parsedFilters.data
 
     const where: Prisma.TransactionWhereInput = {
       userId,
@@ -25,16 +43,16 @@ export async function POST(req: Request) {
       ...(filters.startDate || filters.endDate
         ? {
             date: {
-              ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
-              ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+              ...(filters.startDate ? { gte: filters.startDate } : {}),
+              ...(filters.endDate ? { lte: filters.endDate } : {}),
             },
           }
         : {}),
-      ...(filters.minAmount || filters.maxAmount
+      ...(filters.minAmount !== undefined || filters.maxAmount !== undefined
         ? {
             amount: {
-              ...(filters.minAmount ? { gte: parseFloat(filters.minAmount) } : {}),
-              ...(filters.maxAmount ? { lte: parseFloat(filters.maxAmount) } : {}),
+              ...(filters.minAmount !== undefined ? { gte: filters.minAmount } : {}),
+              ...(filters.maxAmount !== undefined ? { lte: filters.maxAmount } : {}),
             },
           }
         : {}),

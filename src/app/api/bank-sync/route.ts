@@ -3,6 +3,21 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { parseBankAlert, detectMerchantAndCategory } from "@/lib/merchant-sync"
+import { z } from "zod"
+import { Prisma } from "@prisma/client"
+
+const SyncStatusSchema = z.enum(["PENDING", "APPROVED", "DISMISSED"])
+const DemoSyncSchema = z.object({
+  merchant: z.string().trim().min(1).max(200).optional(),
+  amount: z.coerce.number().finite().positive().optional(),
+  currency: z.string().trim().length(3).transform((value) => value.toUpperCase()).default("PKR"),
+  channel: z.enum(["CARD", "BANK", "EASYPAISA", "JAZZCASH"]).default("CARD"),
+  accountId: z.string().trim().min(1).nullable().optional(),
+  suggestedCategoryName: z.string().trim().min(1).max(100).optional(),
+  rawText: z.string().trim().min(1).max(10_000).optional(),
+}).refine((value) => value.rawText || (value.merchant && value.amount), {
+  message: "Provide an SMS alert or both merchant and amount",
+})
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -12,13 +27,14 @@ export async function GET(req: Request) {
 
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
-  const statusParam = searchParams.get("status") || "PENDING"
+  const parsedStatus = SyncStatusSchema.safeParse(searchParams.get("status") || "PENDING")
+  if (!parsedStatus.success) return NextResponse.json({ message: "Invalid sync status" }, { status: 400 })
 
   try {
     const pending = await db.pendingSyncTransaction.findMany({
       where: {
         userId,
-        status: statusParam as any,
+        status: parsedStatus.data,
       },
       include: {
         account: true,
@@ -43,7 +59,13 @@ export async function POST(req: Request) {
   const userId = (session.user as any).id
 
   try {
-    const body = await req.json()
+    const parsedBody = DemoSyncSchema.safeParse(await req.json())
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { message: "Invalid demo sync data", errors: parsedBody.error.flatten().fieldErrors },
+        { status: 400 }
+      )
+    }
     let {
       merchant,
       amount,
@@ -52,7 +74,7 @@ export async function POST(req: Request) {
       accountId,
       suggestedCategoryName,
       rawText,
-    } = body
+    } = parsedBody.data
 
     // If rawText provided (e.g. from SMS alert paste), parse it automatically
     if (rawText) {
@@ -63,7 +85,7 @@ export async function POST(req: Request) {
       if (parsed.suggestedCategoryName) suggestedCategoryName = parsed.suggestedCategoryName
     }
 
-    if (!merchant || !amount || amount <= 0) {
+    if (!merchant || !Number.isFinite(amount) || !amount || amount <= 0) {
       return NextResponse.json(
         { message: "Merchant and positive amount are required" },
         { status: 400 }
@@ -97,16 +119,19 @@ export async function POST(req: Request) {
 
     // Find account if not provided or match by channel name
     let matchedAccountId = accountId || null
+    if (matchedAccountId) {
+      const ownedAccount = await db.account.findFirst({ where: { id: matchedAccountId, userId } })
+      if (!ownedAccount) return NextResponse.json({ message: "Invalid ledger account" }, { status: 400 })
+    }
     if (!matchedAccountId) {
+      const accountMatches: Prisma.AccountWhereInput[] = [{ name: { contains: channel, mode: "insensitive" } }]
+      if (channel === "CARD") accountMatches.push({ type: "CREDIT_CARD" })
+      if (channel === "EASYPAISA") accountMatches.push({ type: "DIGITAL_WALLET" })
+      if (channel === "BANK") accountMatches.push({ type: "BANK_ACCOUNT" })
       const accountByChannel = await db.account.findFirst({
         where: {
           userId,
-          OR: [
-            { name: { contains: channel, mode: "insensitive" } },
-            channel === "CARD" ? { type: "CREDIT_CARD" } : {},
-            channel === "EASYPAISA" ? { type: "DIGITAL_WALLET" } : {},
-            channel === "BANK" ? { type: "BANK_ACCOUNT" } : {},
-          ].filter(Boolean) as any,
+          OR: accountMatches,
         },
       })
       matchedAccountId = accountByChannel?.id || null
@@ -117,7 +142,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         merchant,
-        amount: parseFloat(amount),
+        amount,
         currency,
         channel,
         accountId: matchedAccountId,
@@ -145,8 +170,8 @@ export async function POST(req: Request) {
       data: {
         userId,
         type: "TRANSACTION_ALERT",
-        title: `New ${formattedChannel} Charge: Rs. ${parseFloat(amount).toLocaleString()}`,
-        message: `${merchant} charged Rs. ${parseFloat(amount).toLocaleString()} on your ${formattedChannel}. Add this to your expenses?`,
+        title: `New ${formattedChannel} Charge: Rs. ${amount.toLocaleString()}`,
+        message: `${merchant} charged Rs. ${amount.toLocaleString()} on your ${formattedChannel}. Add this to your expenses?`,
         isRead: false,
       },
     })

@@ -3,6 +3,15 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import crypto from "crypto"
+import { z } from "zod"
+
+const LinkDemoAccountSchema = z.object({
+  provider: z.enum(["EASYPAISA", "JAZZCASH", "MEEZAN_BANK", "HBL", "BANK_ALFALAH", "SADAPAY", "NAYAPAY", "CARD"]),
+  accountName: z.string().trim().min(1).max(100).optional(),
+  identifier: z.string().trim().min(2).max(100),
+  senderId: z.string().trim().max(100).nullable().optional(),
+  accountId: z.string().min(1).optional(),
+})
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -60,23 +69,16 @@ export async function POST(req: Request) {
   const userId = (session.user as any).id
 
   try {
-    const body = await req.json()
-    const {
-      provider, // e.g. "EASYPAISA", "JAZZCASH", "MEEZAN_BANK", "HBL", "SADAPAY", "NAYAPAY", "CARD"
-      accountName,
-      identifier, // e.g. "03001234567" or "4242"
-      senderId, // e.g. "3737", "8558", "MeezanBank"
-      accountId,
-    } = body
-
-    if (!provider || !identifier) {
-      return NextResponse.json(
-        { message: "Provider and account identifier (number/last 4 digits) are required" },
-        { status: 400 }
-      )
-    }
+    const parsed = LinkDemoAccountSchema.safeParse(await req.json())
+    if (!parsed.success) return NextResponse.json({ message: "Invalid demo sync account", errors: parsed.error.flatten().fieldErrors }, { status: 400 })
+    const { provider, accountName, identifier, senderId, accountId } = parsed.data
 
     let targetAccountId = accountId
+
+    if (targetAccountId) {
+      const ownedAccount = await db.account.findFirst({ where: { id: targetAccountId, userId } })
+      if (!ownedAccount) return NextResponse.json({ message: "Invalid ledger account" }, { status: 400 })
+    }
 
     // If no existing account linked, auto-create a corresponding account in ledger
     if (!targetAccountId) {

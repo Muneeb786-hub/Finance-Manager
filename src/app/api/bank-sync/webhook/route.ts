@@ -1,11 +1,33 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { parseBankAlert } from "@/lib/merchant-sync"
+import crypto from "crypto"
+import { checkRateLimit, configuredLimit, getClientAddress, rateLimitResponse } from "@/lib/rate-limit"
+import { Prisma } from "@prisma/client"
+import { logError, requestId } from "@/lib/logger"
+import { z } from "zod"
+
+const WebhookPayloadSchema = z.object({
+  token: z.string().max(256).optional(),
+  text: z.string().max(10_000).optional(),
+  message: z.string().max(10_000).optional(),
+  sms: z.string().max(10_000).optional(),
+  body: z.string().max(10_000).optional(),
+  sender: z.string().max(100).optional(),
+  from: z.string().max(100).optional(),
+}).passthrough()
 
 export async function POST(req: Request) {
+  const rate = checkRateLimit("demo-sync-webhook", getClientAddress(req), configuredLimit("RATE_LIMIT_WEBHOOK_MAX", 60), 60 * 1000)
+  if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds)
+
   try {
     const { searchParams } = new URL(req.url)
-    const body = await req.json().catch(() => ({}))
+    const parsedBody = WebhookPayloadSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsedBody.success) {
+      return NextResponse.json({ message: "Invalid webhook payload" }, { status: 400 })
+    }
+    const body = parsedBody.data
 
     // 1. Extract and validate user webhook token
     const tokenFromQuery = searchParams.get("token")
@@ -41,6 +63,24 @@ export async function POST(req: Request) {
         { message: "No SMS or transaction alert text provided in payload" },
         { status: 400 }
       )
+    }
+
+    const sourceFingerprint = crypto
+      .createHash("sha256")
+      .update(`${user.id}:${sender}:${rawText.trim().replace(/\s+/g, " ")}`)
+      .digest("hex")
+
+    const existingPending = await db.pendingSyncTransaction.findFirst({
+      where: { userId: user.id, sourceFingerprint },
+      include: { account: true, suggestedCategory: true },
+    })
+    if (existingPending) {
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        message: "This demo SMS alert was already received",
+        pendingTransaction: existingPending,
+      })
     }
 
     // 2. Parse SMS alert
@@ -102,15 +142,14 @@ export async function POST(req: Request) {
 
     // D. Fallback to existing account by channel name
     if (!matchedAccountId) {
+      const accountMatches: Prisma.AccountWhereInput[] = [{ name: { contains: parsed.channel, mode: "insensitive" } }]
+      if (parsed.channel === "CARD") accountMatches.push({ type: "CREDIT_CARD" })
+      if (parsed.channel === "EASYPAISA") accountMatches.push({ type: "DIGITAL_WALLET" })
+      if (parsed.channel === "BANK") accountMatches.push({ type: "BANK_ACCOUNT" })
       const fallbackAccount = await db.account.findFirst({
         where: {
           userId: user.id,
-          OR: [
-            { name: { contains: parsed.channel, mode: "insensitive" } },
-            parsed.channel === "CARD" ? { type: "CREDIT_CARD" } : {},
-            parsed.channel === "EASYPAISA" ? { type: "DIGITAL_WALLET" } : {},
-            parsed.channel === "BANK" ? { type: "BANK_ACCOUNT" } : {},
-          ].filter(Boolean) as any,
+          OR: accountMatches,
         },
       })
       matchedAccountId = fallbackAccount?.id || null
@@ -143,25 +182,7 @@ export async function POST(req: Request) {
     }
 
     // 5. Create PendingSyncTransaction
-    const pendingItem = await db.pendingSyncTransaction.create({
-      data: {
-        userId: user.id,
-        merchant: parsed.merchant,
-        amount: parsed.amount,
-        currency: parsed.currency || "PKR",
-        channel: parsed.channel,
-        accountId: matchedAccountId,
-        suggestedCategoryId,
-        rawAlert: rawText,
-        status: "PENDING",
-      },
-      include: {
-        account: true,
-        suggestedCategory: true,
-      },
-    })
-
-    // 6. Create high-priority in-app notification asking for confirmation
+    // 6. Create the pending item and its notification atomically.
     const formattedChannel =
       parsed.channel === "EASYPAISA"
         ? "Easypaisa"
@@ -171,23 +192,55 @@ export async function POST(req: Request) {
         ? "Credit Card"
         : "Bank Account"
 
-    await db.notification.create({
-      data: {
-        userId: user.id,
-        title: `💳 ${formattedChannel} Charge: ${parsed.merchant}`,
-        message: `A charge of Rs. ${parsed.amount.toLocaleString()} was detected from ${formattedChannel}. Click to review and add to expenses.`,
-        type: "WARNING",
-        isRead: false,
-      },
-    })
+    let pendingItem
+    try {
+      pendingItem = await db.$transaction(async (tx) => {
+        const created = await tx.pendingSyncTransaction.create({
+          data: {
+            userId: user.id,
+            merchant: parsed.merchant,
+            amount: parsed.amount,
+            currency: parsed.currency || "PKR",
+            channel: parsed.channel,
+            accountId: matchedAccountId,
+            suggestedCategoryId,
+            rawAlert: rawText,
+            sourceFingerprint,
+            status: "PENDING",
+          },
+          include: { account: true, suggestedCategory: true },
+        })
+        await tx.notification.create({
+          data: {
+            userId: user.id,
+            title: `💳 ${formattedChannel} Charge: ${parsed.merchant}`,
+            message: `A charge of Rs. ${parsed.amount.toLocaleString()} was detected from ${formattedChannel}. Click to review and add to expenses.`,
+            type: "WARNING",
+            isRead: false,
+          },
+        })
+        return created
+      })
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+        const duplicate = await db.pendingSyncTransaction.findFirst({
+          where: { userId: user.id, sourceFingerprint },
+          include: { account: true, suggestedCategory: true },
+        })
+        if (duplicate) {
+          return NextResponse.json({ success: true, duplicate: true, message: "This demo SMS alert was already received", pendingTransaction: duplicate })
+        }
+      }
+      throw error
+    }
 
     return NextResponse.json({
       success: true,
       message: "Charge detected and recorded for user confirmation",
       pendingTransaction: pendingItem,
     })
-  } catch (err: any) {
-    console.error("SMS webhook processing error:", err)
+  } catch (error: unknown) {
+    logError("demo_sync_webhook_failed", error, { requestId: requestId(req) })
     return NextResponse.json(
       { message: "Internal error processing bank sync webhook" },
       { status: 500 }

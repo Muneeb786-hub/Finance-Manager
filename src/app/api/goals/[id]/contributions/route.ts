@@ -6,7 +6,7 @@ import { z } from "zod"
 import { addMoney, subtractMoney } from "@/lib/decimal"
 
 const ContributionPayloadSchema = z.object({
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: z.coerce.number().finite().positive("Amount must be greater than 0"),
   type: z.enum(["CONTRIBUTION", "WITHDRAWAL"]).default("CONTRIBUTION"),
   note: z.string().optional().nullable(),
   date: z.string().optional(),
@@ -14,7 +14,7 @@ const ContributionPayloadSchema = z.object({
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -22,7 +22,7 @@ export async function GET(
   }
 
   const userId = (session.user as any).id
-  const { id: goalId } = params
+  const { id: goalId } = await params
 
   try {
     const goal = await db.savingsGoal.findUnique({
@@ -47,7 +47,7 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -55,7 +55,7 @@ export async function POST(
   }
 
   const userId = (session.user as any).id
-  const { id: goalId } = params
+  const { id: goalId } = await params
 
   try {
     const goal = await db.savingsGoal.findUnique({
@@ -88,9 +88,10 @@ export async function POST(
 
     // Check completion status transition
     let newStatus = goal.status
-    if (newCurrentAmount >= goal.targetAmount && goal.status === "ACTIVE") {
+    const targetAmount = goal.targetAmount.toNumber()
+    if (newCurrentAmount >= targetAmount && goal.status === "ACTIVE") {
       newStatus = "COMPLETED"
-    } else if (newCurrentAmount < goal.targetAmount && goal.status === "COMPLETED") {
+    } else if (newCurrentAmount < targetAmount && goal.status === "COMPLETED") {
       newStatus = "ACTIVE"
     }
 

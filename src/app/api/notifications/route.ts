@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { NotificationSchema } from "@/lib/validations"
+import { Prisma } from "@prisma/client"
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     const type = searchParams.get("type")
     const search = searchParams.get("search")
 
-    const where: any = { userId }
+    const where: Prisma.NotificationWhereInput = { userId }
     if (unreadOnly) {
       where.isRead = false
     }

@@ -4,14 +4,14 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { AssetSchema } from "@/lib/validations"
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.asset.findFirst({
@@ -51,14 +51,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.asset.findFirst({

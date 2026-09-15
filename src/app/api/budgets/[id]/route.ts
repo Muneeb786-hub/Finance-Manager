@@ -5,13 +5,13 @@ import { db } from "@/lib/db"
 import { z } from "zod"
 
 const UpdateBudgetSchema = z.object({
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: z.coerce.number().finite().positive("Amount must be greater than 0"),
   alertThreshold: z.coerce.number().min(1).max(100).default(80),
 })
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -19,7 +19,7 @@ export async function PUT(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.budget.findUnique({
@@ -58,7 +58,7 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -66,7 +66,7 @@ export async function DELETE(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.budget.findUnique({

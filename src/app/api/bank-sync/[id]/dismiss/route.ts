@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -13,7 +13,7 @@ export async function POST(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const pending = await db.pendingSyncTransaction.findUnique({

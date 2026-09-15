@@ -3,11 +3,12 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 
 const UpdateSavingsGoalSchema = z.object({
   title: z.string().min(1, "Title is required").optional(),
   category: z.string().optional().nullable(),
-  targetAmount: z.coerce.number().positive("Target amount must be greater than 0").optional(),
+  targetAmount: z.coerce.number().finite().positive("Target amount must be greater than 0").optional(),
   targetDate: z.string().optional().nullable(),
   icon: z.string().optional(),
   color: z.string().optional(),
@@ -17,7 +18,7 @@ const UpdateSavingsGoalSchema = z.object({
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -25,7 +26,7 @@ export async function GET(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const goal = await db.savingsGoal.findUnique({
@@ -50,7 +51,7 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -58,7 +59,7 @@ export async function PUT(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.savingsGoal.findUnique({
@@ -79,7 +80,7 @@ export async function PUT(
       )
     }
 
-    const updateData: any = {}
+    const updateData: Prisma.SavingsGoalUncheckedUpdateInput = {}
     if (validation.data.title !== undefined) updateData.title = validation.data.title
     if (validation.data.category !== undefined) updateData.category = validation.data.category ? validation.data.category.trim() : "General"
     if (validation.data.targetAmount !== undefined) updateData.targetAmount = validation.data.targetAmount
@@ -105,7 +106,7 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -113,7 +114,7 @@ export async function DELETE(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.savingsGoal.findUnique({

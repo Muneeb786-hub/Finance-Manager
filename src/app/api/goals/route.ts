@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { SavingsGoalSchema } from "@/lib/validations"
 import { addMoney, subtractMoney, calculatePercentage } from "@/lib/decimal"
+import { Prisma } from "@prisma/client"
+import { z } from "zod"
 
 function calculateMonthlyRequired(targetAmount: number, currentAmount: number, targetDate: Date | null): number | null {
   if (!targetDate) return null
@@ -34,12 +36,13 @@ export async function GET(req: Request) {
 
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
-  const statusFilter = searchParams.get("status") || "ALL"
+  const parsedStatus = z.enum(["ACTIVE", "COMPLETED", "ARCHIVED", "ALL"]).safeParse(searchParams.get("status") || "ALL")
+  if (!parsedStatus.success) return NextResponse.json({ message: "Invalid goal status" }, { status: 400 })
 
   try {
-    const whereClause: any = { userId }
-    if (statusFilter !== "ALL") {
-      whereClause.status = statusFilter
+    const whereClause: Prisma.SavingsGoalWhereInput = { userId }
+    if (parsedStatus.data !== "ALL") {
+      whereClause.status = parsedStatus.data
     }
 
     const goalsData = await db.savingsGoal.findMany({
@@ -60,8 +63,8 @@ export async function GET(req: Request) {
     const goals = goalsData.map((goal) => {
       const percentage = calculatePercentage(goal.currentAmount, goal.targetAmount)
       const remaining = Math.max(0, subtractMoney(goal.targetAmount, goal.currentAmount))
-      const monthlyRequired = calculateMonthlyRequired(goal.targetAmount, goal.currentAmount, goal.targetDate)
-      const isComplete = goal.currentAmount >= goal.targetAmount || goal.status === "COMPLETED"
+      const monthlyRequired = calculateMonthlyRequired(goal.targetAmount.toNumber(), goal.currentAmount.toNumber(), goal.targetDate)
+      const isComplete = goal.currentAmount.greaterThanOrEqualTo(goal.targetAmount) || goal.status === "COMPLETED"
 
       if (goal.status === "ACTIVE") {
         totalTargetAmount = addMoney(totalTargetAmount, goal.targetAmount)

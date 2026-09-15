@@ -1,9 +1,10 @@
 import { db } from "@/lib/db"
 import { addMoney } from "@/lib/decimal"
+import { Prisma } from "@prisma/client"
 
-export async function seedUserDemoData(userId: string) {
+export async function seedUserDemoData(userId: string, client: Prisma.TransactionClient | typeof db = db) {
   // Ensure default categories exist or retrieve them
-  const categories = await db.category.findMany({
+  const categories = await client.category.findMany({
     where: { userId },
   })
 
@@ -17,7 +18,7 @@ export async function seedUserDemoData(userId: string) {
   let entertainmentCat = categories.find((c) => c.name.toLowerCase().includes("entertain"))
   let subscriptionsCat = categories.find((c) => c.name.toLowerCase().includes("subscription"))
   if (!subscriptionsCat) {
-    subscriptionsCat = await db.category.create({
+    subscriptionsCat = await client.category.create({
       data: {
         userId,
         name: "Subscriptions",
@@ -30,9 +31,9 @@ export async function seedUserDemoData(userId: string) {
   }
 
   // Create accounts if none exist, or fetch primary account
-  let accounts = await db.account.findMany({ where: { userId } })
+  let accounts = await client.account.findMany({ where: { userId } })
   if (accounts.length === 0) {
-    const mainBank = await db.account.create({
+    const mainBank = await client.account.create({
       data: {
         userId,
         name: "Main Checking Account",
@@ -40,7 +41,7 @@ export async function seedUserDemoData(userId: string) {
         openingBalance: 3200,
       },
     })
-    const cash = await db.account.create({
+    const cash = await client.account.create({
       data: {
         userId,
         name: "Cash Wallet",
@@ -184,7 +185,7 @@ export async function seedUserDemoData(userId: string) {
 
   for (const tx of demoTransactions) {
     if (tx.categoryId) {
-      await db.transaction.create({
+      await client.transaction.create({
         data: {
           userId,
           accountId: primaryAccountId,
@@ -202,7 +203,7 @@ export async function seedUserDemoData(userId: string) {
 
   // Create active monthly budgets for current month
   if (foodCat) {
-    await db.budget.upsert({
+    await client.budget.upsert({
       where: {
         userId_categoryId_month_year: {
           userId,
@@ -224,7 +225,7 @@ export async function seedUserDemoData(userId: string) {
   }
 
   if (transportCat) {
-    await db.budget.upsert({
+    await client.budget.upsert({
       where: {
         userId_categoryId_month_year: {
           userId,
@@ -246,9 +247,9 @@ export async function seedUserDemoData(userId: string) {
   }
 
   // Create savings goals with initial deposits
-  const existingGoals = await db.savingsGoal.findMany({ where: { userId } })
+  const existingGoals = await client.savingsGoal.findMany({ where: { userId } })
   if (existingGoals.length === 0) {
-    const emergencyGoal = await db.savingsGoal.create({
+    const emergencyGoal = await client.savingsGoal.create({
       data: {
         userId,
         title: "Emergency Rainy Day Reserve",
@@ -261,7 +262,7 @@ export async function seedUserDemoData(userId: string) {
       },
     })
 
-    await db.goalContribution.create({
+    await client.goalContribution.create({
       data: {
         userId,
         goalId: emergencyGoal.id,
@@ -271,7 +272,7 @@ export async function seedUserDemoData(userId: string) {
       },
     })
 
-    const vacationGoal = await db.savingsGoal.create({
+    const vacationGoal = await client.savingsGoal.create({
       data: {
         userId,
         title: "Japan Summer Trip",
@@ -284,7 +285,7 @@ export async function seedUserDemoData(userId: string) {
       },
     })
 
-    await db.goalContribution.create({
+    await client.goalContribution.create({
       data: {
         userId,
         goalId: vacationGoal.id,
@@ -296,10 +297,10 @@ export async function seedUserDemoData(userId: string) {
   }
 
   // Create recurring commitments
-  const existingRecurring = await db.recurringTransaction.findMany({ where: { userId } })
+  const existingRecurring = await client.recurringTransaction.findMany({ where: { userId } })
   if (existingRecurring.length === 0) {
     if (rentCat) {
-      await db.recurringTransaction.create({
+      await client.recurringTransaction.create({
         data: {
           userId,
           categoryId: rentCat.id,
@@ -315,7 +316,7 @@ export async function seedUserDemoData(userId: string) {
     }
 
     if (incomeCat) {
-      await db.recurringTransaction.create({
+      await client.recurringTransaction.create({
         data: {
           userId,
           categoryId: incomeCat.id,
@@ -364,7 +365,7 @@ export async function seedUserDemoData(userId: string) {
         nextDate.setMonth(nextDate.getMonth() + 1)
       }
 
-      await db.recurringTransaction.create({
+      await client.recurringTransaction.create({
         data: {
           userId,
           categoryId: subscriptionsCat.id,
@@ -383,7 +384,7 @@ export async function seedUserDemoData(userId: string) {
   }
 
   // Seed helpful notifications
-  await db.notification.create({
+  await client.notification.create({
     data: {
       userId,
       type: "SYSTEM_INFO",
@@ -393,7 +394,7 @@ export async function seedUserDemoData(userId: string) {
   })
 
   // Mark onboarding complete
-  await db.user.update({
+  await client.user.update({
     where: { id: userId },
     data: { onboardingComplete: true },
   })

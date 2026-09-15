@@ -7,12 +7,12 @@ import { z } from "zod"
 const UpdateAccountSchema = z.object({
   name: z.string().min(1, "Account name is required").max(50),
   type: z.enum(["CASH", "BANK_ACCOUNT", "DIGITAL_WALLET", "CREDIT_CARD", "INVESTMENT", "OTHER"]),
-  openingBalance: z.coerce.number().default(0),
+  openingBalance: z.coerce.number().finite().default(0),
 })
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -20,7 +20,7 @@ export async function PATCH(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.account.findUnique({ where: { id } })
@@ -38,7 +38,7 @@ export async function PATCH(
       where: { id },
       data: {
         name: validated.data.name,
-        type: validated.data.type as any,
+        type: validated.data.type,
         openingBalance: validated.data.openingBalance,
       },
     })
@@ -52,7 +52,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -60,7 +60,7 @@ export async function DELETE(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.account.findUnique({ where: { id } })

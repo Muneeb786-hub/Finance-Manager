@@ -5,6 +5,8 @@ import { db } from "@/lib/db"
 import { RecurringTransactionSchema } from "@/lib/validations"
 import { calculateMonthlyEquivalent } from "@/lib/recurring"
 import { addMoney, subtractMoney } from "@/lib/decimal"
+import { Prisma } from "@prisma/client"
+import { z } from "zod"
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -14,13 +16,14 @@ export async function GET(req: Request) {
 
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
-  const statusFilter = searchParams.get("status") || "ALL"
+  const parsedStatus = z.enum(["ACTIVE", "PAUSED", "ALL"]).safeParse(searchParams.get("status") || "ALL")
+  if (!parsedStatus.success) return NextResponse.json({ message: "Invalid recurring status" }, { status: 400 })
   const isSubscriptionParam = searchParams.get("isSubscription")
 
   try {
-    const whereClause: any = { userId }
-    if (statusFilter === "ACTIVE") whereClause.isActive = true
-    else if (statusFilter === "PAUSED") whereClause.isActive = false
+    const whereClause: Prisma.RecurringTransactionWhereInput = { userId }
+    if (parsedStatus.data === "ACTIVE") whereClause.isActive = true
+    else if (parsedStatus.data === "PAUSED") whereClause.isActive = false
 
     if (isSubscriptionParam === "true") {
       whereClause.isSubscription = true
@@ -47,7 +50,7 @@ export async function GET(req: Request) {
     const schedules = rawSchedules.map((item) => {
       const isDue = item.isActive && new Date(item.nextRunDate) <= now
       const isExpired = item.endDate ? new Date(item.endDate) < now : false
-      const monthlyAmount = calculateMonthlyEquivalent(item.amount, item.frequency as any)
+      const monthlyAmount = calculateMonthlyEquivalent(item.amount, item.frequency)
 
       if (item.isActive && !isExpired) {
         activeCount++
@@ -126,10 +129,7 @@ export async function POST(req: Request) {
 
     // Verify category
     const category = await db.category.findFirst({
-      where: {
-        id: categoryId,
-        OR: [{ userId }, { isDefault: true }],
-      },
+      where: { id: categoryId, userId, type },
     })
 
     if (!category) {

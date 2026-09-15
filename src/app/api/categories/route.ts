@@ -19,7 +19,9 @@ export async function GET(req: Request) {
 
   const userId = (session.user as any).id
   const { searchParams } = new URL(req.url)
-  const type = searchParams.get("type") as "INCOME" | "EXPENSE" | null
+  const parsedType = z.enum(["INCOME", "EXPENSE"]).optional().safeParse(searchParams.get("type") || undefined)
+  if (!parsedType.success) return NextResponse.json({ message: "Invalid category type" }, { status: 400 })
+  const type = parsedType.data
 
   try {
     const categories = await db.category.findMany({

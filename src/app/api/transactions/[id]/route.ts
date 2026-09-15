@@ -6,7 +6,7 @@ import { TransactionSchema } from "@/lib/validations"
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -14,7 +14,7 @@ export async function GET(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const transaction = await db.transaction.findFirst({
@@ -38,7 +38,7 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -46,7 +46,7 @@ export async function PATCH(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.transaction.findFirst({
@@ -86,6 +86,13 @@ export async function PATCH(
       )
     }
 
+    if (accountId) {
+      const account = await db.account.findFirst({ where: { id: accountId, userId } })
+      if (!account) {
+        return NextResponse.json({ message: "Selected account does not exist" }, { status: 400 })
+      }
+    }
+
     const updated = await db.transaction.update({
       where: { id },
       data: {
@@ -113,7 +120,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -121,7 +128,7 @@ export async function DELETE(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.transaction.findFirst({

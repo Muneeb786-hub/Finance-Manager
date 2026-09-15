@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 
 const UpdateRecurringSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]).optional(),
-  amount: z.coerce.number().positive("Amount must be greater than 0").optional(),
+  amount: z.coerce.number().finite().positive("Amount must be greater than 0").optional(),
   categoryId: z.string().min(1).optional(),
   accountId: z.string().optional().nullable(),
   description: z.string().min(1).optional(),
@@ -20,7 +21,7 @@ const UpdateRecurringSchema = z.object({
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -28,7 +29,7 @@ export async function GET(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const schedule = await db.recurringTransaction.findUnique({
@@ -56,7 +57,7 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -64,7 +65,7 @@ export async function PUT(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.recurringTransaction.findUnique({
@@ -85,7 +86,17 @@ export async function PUT(
       )
     }
 
-    const updateData: any = {}
+    const resultingType = validation.data.type ?? existing.type
+    const resultingCategoryId = validation.data.categoryId ?? existing.categoryId
+    const resultingAccountId = validation.data.accountId === undefined ? existing.accountId : validation.data.accountId
+    const [category, account] = await Promise.all([
+      db.category.findFirst({ where: { id: resultingCategoryId, userId, type: resultingType } }),
+      resultingAccountId ? db.account.findFirst({ where: { id: resultingAccountId, userId } }) : null,
+    ])
+    if (!category) return NextResponse.json({ message: "Invalid category for recurring transaction" }, { status: 400 })
+    if (resultingAccountId && !account) return NextResponse.json({ message: "Invalid account" }, { status: 400 })
+
+    const updateData: Prisma.RecurringTransactionUncheckedUpdateInput = {}
     if (validation.data.type !== undefined) updateData.type = validation.data.type
     if (validation.data.amount !== undefined) updateData.amount = validation.data.amount
     if (validation.data.categoryId !== undefined) updateData.categoryId = validation.data.categoryId
@@ -115,7 +126,7 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user || !(session.user as any).id) {
@@ -123,7 +134,7 @@ export async function DELETE(
   }
 
   const userId = (session.user as any).id
-  const { id } = params
+  const { id } = await params
 
   try {
     const existing = await db.recurringTransaction.findUnique({
