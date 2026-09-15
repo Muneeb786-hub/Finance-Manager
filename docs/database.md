@@ -1,20 +1,25 @@
-# Database Schema & Models
+# Database and Migrations
 
-The application utilizes PostgreSQL managed through Prisma ORM.
+PostgreSQL is accessed through Prisma. Every user-owned model has a `userId` relation with cascade behavior appropriate to its lifecycle.
 
-## Relational Schema Diagram
-- **User**: Central entity managing profile preferences, currency, and credentials.
-- **Account**: Optional financial buckets (Cash, Bank Account, Digital Wallet, Credit Card).
-- **Category**: Custom and system categories tagged as `INCOME` or `EXPENSE`.
-- **Transaction**: Recorded ledger entries linked to categories, accounts, and tags.
-- **Budget**: Monthly targets per category with alert threshold percentages.
-- **SavingsGoal**: Financial targets with linked contributions and withdrawals.
-- **GoalContribution**: Ledger of deposits and withdrawals towards specific goals.
-- **RecurringTransaction**: Automated schedule templates (Daily, Weekly, Monthly, Yearly).
-- **Notification**: Alerts for budget boundaries, recurring executions, and goal completions.
-- **FinancialInsight**: Historical structured reports and educational summaries.
+## Financial Precision
 
-## Indexes & Constraints
-- `User.email`: Unique index.
-- `Budget`: Unique composite index on `[userId, categoryId, month, year]` preventing duplicate monthly budgets.
-- `Transaction`: Multi-column indexes on `[userId, date]`, `[userId, categoryId]`, and `[userId, type]` for rapid filtering and sorting.
+- Monetary fields: `Decimal(19,4)`
+- Budget thresholds: `Decimal(5,2)`
+- Asset quantities: `Decimal(30,12)`
+
+Application calculations use Decimal helpers. JSON responses remain numeric for compatibility with charts and existing clients.
+
+## Integrity Constraints
+
+- Budget uniqueness: user, category, month, and year
+- Recurring occurrence uniqueness: `Transaction.occurrenceKey`
+- CSV duplicate uniqueness: `Transaction.importFingerprint`
+- Demo webhook uniqueness: user and `PendingSyncTransaction.sourceFingerprint`
+- Approved sync linkage: unique `PendingSyncTransaction.transactionId`
+
+## Migration Strategy
+
+Fresh databases run `npx prisma migrate deploy`. Existing databases created through `prisma db push` must first mark `20260901000000_initial` as applied; `20260914000100_financial_integrity` then preserves and casts existing values. See the root README for exact commands.
+
+Do not use `prisma db push` as the normal shared or deployed workflow. Create reviewed migrations for subsequent schema changes.

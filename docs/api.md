@@ -10,6 +10,10 @@ All protected routes require an active NextAuth session cookie (`next-auth.sessi
 - `GET /api/auth/profile`: Fetch current authenticated user's profile metadata, base currency, and timezone.
 - `PATCH /api/auth/profile`: Update user display name, preferred currency, and timezone.
 - `POST /api/auth/change-password`: Verify current password and securely hash new password credentials.
+- `GET /api/auth/2fa/status`: Return whether TOTP is enabled and the number of unused recovery codes.
+- `POST /api/auth/2fa/setup`: Generate a temporary TOTP enrollment QR payload.
+- `POST /api/auth/2fa/verify`: Verify enrollment, encrypt the secret, and return one-time recovery codes.
+- `POST /api/auth/2fa/disable`: Reauthenticate with the current password and disable TOTP.
 
 ## Accounts & Categories
 - `GET /api/accounts`: Fetch all financial accounts and ledgers owned by the authenticated user.
@@ -28,6 +32,13 @@ All protected routes require an active NextAuth session cookie (`next-auth.sessi
 - `DELETE /api/transactions/[id]`: Delete an individual transaction.
 - `POST /api/transactions/bulk`: Batch delete transactions with atomic verification.
 - `POST /api/transactions/export`: Filter-aware CSV export of transactions for spreadsheets.
+- `POST /api/transactions/import`: Preview or confirm a validated CSV import with duplicate detection (maximum 500 rows).
+
+## Assets and Net Worth
+- `GET /api/assets`: List assets with category totals and net-worth summary.
+- `POST /api/assets`: Create an owned asset record.
+- `PUT /api/assets/[id]`: Replace an owned asset record.
+- `DELETE /api/assets/[id]`: Delete an owned asset record.
 
 ## Dashboard & Analytics
 - `GET /api/dashboard`: Aggregated dashboard metrics: net total balance, current month cash flow, 6-month trends, category breakdowns, budget alerts, and active goals.
@@ -67,7 +78,19 @@ All protected routes require an active NextAuth session cookie (`next-auth.sessi
 ## Onboarding & Sandbox Demo Mode
 - `POST /api/onboarding/complete`: Save user profile choices, initial account balances, budget, and goal in an atomic transaction and set `onboardingComplete: true`.
 - `POST /api/onboarding/seed-demo`: Populate realistic 3-month sample transactions, budgets, goals, and recurring rules for sandbox exploration.
+- `POST /api/onboarding/reset-demo`: Atomically replace financial records with the deterministic portfolio dataset.
+
+## Demo SMS Sync
+- `GET /api/bank-sync`: List pending simulated alerts by status.
+- `POST /api/bank-sync`: Create a fictional charge for review.
+- `POST /api/bank-sync/[id]/approve`: Atomically approve a charge, optionally creating a monthly recurring rule.
+- `POST /api/bank-sync/[id]/dismiss`: Dismiss a pending charge.
+- `GET|POST /api/bank-sync/linked`: List or configure fictional SMS sources and a per-user webhook token.
+- `DELETE /api/bank-sync/linked/[id]`: Remove a fictional SMS source.
+- `POST /api/bank-sync/webhook`: Accept a token-authenticated sample SMS payload with rate limiting and duplicate detection.
+
+Demo SMS Sync never connects to a financial institution.
 
 ## Data Portability & Privacy
-- `GET /api/account-data`: Export a complete, portable JSON backup containing all user financial records.
+- `GET /api/account-data`: Export a versioned JSON backup containing all user financial and demo-sync records.
 - `DELETE /api/account-data`: Irreversible full data wipe with double confirmation requiring the exact verification phrase (`DELETE MY DATA`).

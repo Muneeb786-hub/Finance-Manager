@@ -2,6 +2,18 @@
 
 All notable changes to the Personal Finance Manager project will be documented in this file.
 
+## [1.0.0] - 2026-09-14
+### Added
+- Fixed-precision PostgreSQL money migration with backward-compatible JSON serialization.
+- Idempotent recurring occurrences, simulated webhook fingerprints, atomic sync approval, and complete privacy export/wipe coverage.
+- Encrypted TOTP secrets, hashed recovery codes, rate limits, request IDs, and defense-in-depth dashboard authentication.
+- Timezone-aware reporting periods, typed API clients/DTOs, CSV preview/import, deterministic demo reset, and an installable SVG app icon.
+- PostgreSQL integration tests, Playwright portfolio E2E coverage, and GitHub Actions CI.
+
+### Changed
+- Renamed and relabeled bank-sync UI as Demo SMS Sync to state clearly that no live financial connection exists.
+- Consolidated dashboard and analytics reporting queries and synchronized setup, API, database, architecture, and security documentation.
+
 ## [0.11.0] - 2026-09-06
 ### Added
 - Milestone 11: End-to-End Integration Test Suite, Web App Manifest & Offline Assets, and API Documentation Finalization.

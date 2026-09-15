@@ -1,51 +1,25 @@
-# Architecture & System Design
+# Architecture
 
-## Overview
-Personal Finance Manager is a modern, full-stack web application designed for personal financial management, budgeting, savings goals, recurring cash flow automation, and analytical summaries.
+Personal Finance Manager is a modular monolith built on the Next.js App Router. Client feature pages call same-origin route handlers; route handlers authenticate the user, validate input with Zod, enforce ownership, and use Prisma to access PostgreSQL.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Next.js App Router (Client & SSR)            │
-│  - Landing & Authentication (/login, /register)                 │
-│  - Dashboard & Visual Analytics (Recharts, React Server Comp)   │
-│  - Transaction & Budget Management Interfaces                   │
-└────────────────┬───────────────────────────────┬────────────────┘
-                 │                               │
-                 ▼                               ▼
-┌────────────────────────────────┐ ┌──────────────────────────────┐
-│       NextAuth / Auth.js       │ │     Next.js API Handlers     │
-│  - JWT Session Strategy        │ │  - Zod Request Validation    │
-│  - Bcrypt Password Hashing     │ │  - User ID Ownership Guards  │
-│  - Route Protection Middleware │ │  - Decimal Precision Engine  │
-└────────────────────────────────┘ └─────────────┬────────────────┘
-                                                 │
-                                                 ▼
-                                   ┌──────────────────────────────┐
-                                   │      Prisma ORM Client       │
-                                   │  - Relational Data Model     │
-                                   │  - Strict Cascade Rules      │
-                                   └─────────────┬────────────────┘
-                                                 │
-                                                 ▼
-                                   ┌──────────────────────────────┐
-                                   │      PostgreSQL Database     │
-                                   │  - User Data Isolation       │
-                                   │  - Optimized Multi-Indexes   │
-                                   └──────────────────────────────┘
+```mermaid
+flowchart LR
+  Browser[Next.js UI] --> Auth[Auth.js JWT session]
+  Browser --> API[Route handlers]
+  API --> Guard[Zod + ownership guards]
+  Guard --> Domain[Decimal, insights, recurrence, CSV, demo sync]
+  Domain --> Prisma[Prisma transactions]
+  Prisma --> DB[(PostgreSQL)]
+  Demo[Demo SMS webhook] --> Limit[Token + rate limit + dedupe]
+  Limit --> API
 ```
 
-## Technology Stack
-- **Framework**: Next.js 14 (App Router, Server Actions, API Routes)
-- **Language**: TypeScript with strict mode enabled
-- **Styling**: Tailwind CSS, CSS variables, `next-themes` (Dark/Light mode)
-- **Component Primitives**: Radix UI, Lucide Icons, Sonner toasts
-- **Forms & Validation**: React Hook Form with Zod schemas
-- **Database**: PostgreSQL (accessible via Docker, Neon, Supabase, or local instance)
-- **ORM**: Prisma Client with relational foreign keys and composite indexes
-- **Financial Calculation Engine**: `decimal.js` for safe arbitrary-precision decimal operations
-- **Testing**: Vitest for unit & integration testing, Playwright for E2E workflows
+## Major Flows
 
-## Data Isolation & Security Principles
-1. Every query in the application enforces explicit `userId` filtering.
-2. Cross-user access is rejected with a 403 Forbidden or 404 Not Found.
-3. Passwords are never stored in plaintext and are salted and hashed using `bcryptjs` with 12 rounds.
+- Ledger: accounts and assets establish tracked value; transactions provide income and expense cash flow.
+- Planning: budgets, savings goals, and recurring templates derive progress and projections from the ledger.
+- Reporting: dashboard, analytics, and insights query bounded UTC ranges calculated from the user’s IANA timezone.
+- Demo SMS Sync: fictional provider alerts create pending records; the user reviews them before an atomic ledger write.
+- Privacy: a versioned export covers every user-owned financial model; wipe removes financial and sync state but preserves login and security configuration.
+
+Money is stored as `Decimal`, converted to JSON numbers at the API boundary for compatibility, and formatted using the selected currency in the UI.

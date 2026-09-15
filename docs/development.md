@@ -1,44 +1,26 @@
-# Local Development Guide
+# Development Guide
 
-## Prerequisites
-- Node.js 18+ or 20+
-- npm 9+
-- Docker or a local PostgreSQL instance
+## Local Environment
 
-## Quick Start
+1. Install Node.js 20+, npm 9+, and Docker.
+2. Run `npm install` and copy `.env.example` to `.env`.
+3. Start PostgreSQL with `docker compose up -d`.
+4. Apply the schema with `npx prisma migrate deploy` and seed with `npx prisma db seed`.
+5. Run `npm run dev` and open `http://localhost:3004`.
 
-1. **Clone the repository and install dependencies**:
-   ```bash
-   git clone <repository-url>
-   cd Finance-Manager
-   npm install
-   ```
+The Docker connection is `postgresql://postgres:postgrespassword@localhost:5433/finance_manager?schema=public`.
 
-2. **Configure Environment Variables**:
-   Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
+## Quality Commands
 
-3. **Start PostgreSQL Database**:
-   If using Docker:
-   ```bash
-   docker compose up -d
-   ```
+- `npm run lint`: ESLint checks with zero warnings allowed
+- `npx tsc --noEmit`: strict TypeScript checking
+- `npm test`: unit tests plus non-database lifecycle tests
+- `npm run test:integration`: PostgreSQL-backed ownership, precision, concurrency, export, and wipe checks
+- `npm run test:e2e`: Chromium portfolio journey
+- `npm run build`: production compilation
 
-4. **Initialize Database Schema & Seed Data**:
-   ```bash
-   npx prisma db push
-   npx prisma db seed
-   ```
+Use a disposable database for integration and E2E tests. CI creates one with PostgreSQL 16 and runs migrations before testing.
 
-5. **Start Development Server**:
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Demo Walkthrough
 
-6. **Run Test Suites**:
-   ```bash
-   npm test
-   ```
+Sign in with the seeded account, choose **Reset Demo Workspace** under Settings → Data & Privacy, review Dashboard and Analytics, open **Demo SMS Sync**, approve the fictional charge, preview a CSV import, and download the versioned JSON backup.

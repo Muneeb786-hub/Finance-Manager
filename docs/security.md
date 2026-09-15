@@ -1,17 +1,22 @@
-# Security & Privacy Documentation
+# Security and Privacy
 
-## Data Ownership & Multi-Tenancy Isolation
-Every data model (`Account`, `Category`, `Transaction`, `Budget`, `SavingsGoal`, `GoalContribution`, `RecurringTransaction`, `Notification`, `FinancialInsight`) contains a foreign key to `User.id`.
-- Mutating endpoints verify that `session.user.id` equals the owner ID before any write or delete.
-- Listing endpoints query explicitly with `where: { userId: session.user.id }`.
+## Authentication and Tenant Isolation
 
-## Authentication & Session Security
-- Authenticated sessions are tokenized through signed JSON Web Tokens (JWT) using NextAuth.
-- Passwords are validated using `bcryptjs` with a work factor of 12 rounds.
-- CSRF protection is provided out-of-the-box by Next.js and NextAuth.
+- Auth.js uses signed JWT sessions and credentials hashed with bcrypt (12 rounds).
+- Dashboard middleware and the server dashboard layout both reject unauthenticated access.
+- Route handlers scope reads by `userId` and verify ownership of submitted account/category relationships.
+- Registration, login, 2FA verification, and demo webhook ingestion have bounded in-process rate limits. A distributed deployment should replace the in-memory store with a shared Redis-compatible limiter.
 
-## Private Data & Bank Connection Disclaimer
-Personal Finance Manager is intentionally engineered as an offline-first and self-directed personal finance system:
-- **No live bank integrations**: The app never connects to external banking networks (e.g., Plaid, MX, Yodlee).
-- All account details and financial records are entered solely by the user for private tracking.
-- Complete data removal can be executed at any time in the Settings portal.
+## Two-Factor Authentication
+
+TOTP secrets are encrypted with AES-256-GCM using `TWO_FACTOR_ENCRYPTION_KEY`. Recovery codes are bcrypt hashes and are consumed using a compare-and-swap update. Disabling or replacing 2FA requires password reauthentication. Never log secrets, recovery codes, passwords, or QR payloads.
+
+## Demo SMS Sync
+
+Demo SMS Sync is not a banking integration. A per-user random webhook token authorizes sample alerts; identical payloads are fingerprinted to prevent duplicate pending charges. Approval validates all owned relationships and commits the optional recurring rule, transaction, and status transition atomically.
+
+Webhook tokens should be sent in the `Authorization: Bearer` header. Query-string support exists for simple portfolio tooling but may be recorded by infrastructure logs.
+
+## Privacy and Logging
+
+Exports use a versioned envelope and include assets and sync records. Wipe removes every financial/sync record and removes the webhook token while retaining the user account, password, and 2FA configuration. Structured error logs intentionally omit values whose keys indicate passwords, secrets, tokens, raw messages, or amounts.
