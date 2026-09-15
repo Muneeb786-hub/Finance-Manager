@@ -103,7 +103,7 @@ export function BudgetModal({
       const res = await fetch("/api/categories")
       const data = await res.json()
       if (Array.isArray(data)) {
-        const expenseCats = data.filter((c: any) => c.type === "EXPENSE")
+        const expenseCats = (data as Category[]).filter((category) => category.type === "EXPENSE")
         setCategories(expenseCats)
       }
     } catch (err) {
@@ -190,8 +190,8 @@ export function BudgetModal({
       setValue("categoryId", createdCat.id, { shouldValidate: true })
       setIsCreatingCategory(false)
       setNewCatName("")
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create category")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create category")
     } finally {
       setIsSavingCategory(false)
     }
@@ -237,8 +237,8 @@ export function BudgetModal({
 
       onSuccess()
       onClose()
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong")
     } finally {
       setIsSubmitting(false)
     }
@@ -253,7 +253,7 @@ export function BudgetModal({
           </DialogTitle>
           <DialogDescription>
             {isEditing || matchingExistingBudget
-              ? "Update your monthly spending limit or threshold (e.g. change from $800 to $900)."
+              ? `Update your monthly spending limit or threshold (for example, ${formatCurrency(800)} to ${formatCurrency(900)}).`
               : "Define a monthly spending ceiling for an existing category or create a new one."}
           </DialogDescription>
         </DialogHeader>
@@ -387,7 +387,7 @@ export function BudgetModal({
                     Current budget: {formatCurrency(matchingExistingBudget.amount)}/mo
                   </span>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Update the limit below to change your monthly spending target (e.g. from {formatCurrency(matchingExistingBudget.amount)} to $900).
+                    Update the limit below to change your monthly spending target (for example, from {formatCurrency(matchingExistingBudget.amount)} to {formatCurrency(900)}).
                   </p>
                 </div>
               </div>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Activity, ShieldCheck, AlertTriangle, AlertCircle, ArrowUpRight } from "lucide-react"
 import { FinancialHealthScoreResult } from "@/lib/insights"
+import { useCurrency } from "@/lib/currency-context"
 
 interface HealthScoreCardProps {
   health: FinancialHealthScoreResult
@@ -21,6 +22,7 @@ export function HealthScoreCard({
   netFlow,
   runwayMonths,
 }: HealthScoreCardProps) {
+  const { format } = useCurrency()
   const getRatingBadge = (rating: string) => {
     switch (rating) {
       case "EXCELLENT":
@@ -111,7 +113,7 @@ export function HealthScoreCard({
             <div className="p-3 rounded-lg border border-border/60 bg-card">
               <span className="text-[11px] text-muted-foreground font-medium block">Net Surplus</span>
               <span className={`text-base font-bold ${netFlow >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                {netFlow >= 0 ? "+" : ""}${netFlow.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                {netFlow >= 0 ? "+" : ""}{format(netFlow)}
               </span>
             </div>
 

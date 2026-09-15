@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { useCurrency } from "@/lib/currency-context"
 import { Tag } from "lucide-react"
 
 interface CategoryItem {
@@ -18,6 +19,7 @@ interface CategoryBreakdownTableProps {
 }
 
 export function CategoryBreakdownTable({ categories, totalExpenses }: CategoryBreakdownTableProps) {
+  const { format } = useCurrency()
   if (categories.length === 0) {
     return (
       <Card className="border-border shadow-sm">
@@ -46,7 +48,7 @@ export function CategoryBreakdownTable({ categories, totalExpenses }: CategoryBr
             </CardDescription>
           </div>
           <span className="text-xs font-semibold text-muted-foreground">
-            Total: ${totalExpenses.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            Total: {format(totalExpenses)}
           </span>
         </div>
       </CardHeader>
@@ -65,7 +67,7 @@ export function CategoryBreakdownTable({ categories, totalExpenses }: CategoryBr
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-mono font-medium text-foreground">
-                  ${cat.amount.toFixed(2)}
+                  {format(cat.amount)}
                 </span>
                 <span className="text-muted-foreground w-11 text-right font-medium">
                   {cat.percentage}%

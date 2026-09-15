@@ -46,7 +46,7 @@ export default function RecurringPage() {
         dueCount: 0,
         totalCount: 0,
       })
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
       toast.error("Failed to load recurring schedules")
     } finally {
@@ -82,8 +82,8 @@ export default function RecurringPage() {
           : `Resumed "${schedule.description}"`
       )
       fetchSchedules()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to toggle status")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to toggle status")
     }
   }
 
@@ -104,8 +104,8 @@ export default function RecurringPage() {
         toast.success(data.message)
         fetchSchedules()
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to process recurring items")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to process recurring items")
     } finally {
       setIsProcessing(false)
     }

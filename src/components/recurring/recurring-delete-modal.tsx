@@ -45,8 +45,8 @@ export function RecurringDeleteModal({
       toast.success("Recurring schedule deleted successfully")
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete schedule")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete schedule")
     } finally {
       setIsDeleting(false)
     }

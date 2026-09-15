@@ -9,7 +9,7 @@ interface Snapshot {
   periodStart: string
   periodEnd: string
   summary: string
-  structuredData: any
+  structuredData: { healthScore?: { score?: number; rating?: string }; [key: string]: unknown }
   createdAt: string
 }
 

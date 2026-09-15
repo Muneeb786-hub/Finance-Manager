@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Wallet, Plus, Trash2, Edit2, CreditCard, Building, Smartphone, Banknote } from "lucide-react"
 import { LinkedAccountsCard } from "@/components/bank-sync/linked-accounts-card"
+import { useCurrency } from "@/lib/currency-context"
 
 export interface AccountRecord {
   id: string
@@ -31,6 +32,7 @@ interface AccountsSettingsTabProps {
 }
 
 export function AccountsSettingsTab({ accounts, onRefresh }: AccountsSettingsTabProps) {
+  const { format } = useCurrency()
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<AccountRecord | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -173,7 +175,7 @@ export function AccountsSettingsTab({ accounts, onRefresh }: AccountsSettingsTab
                         {formatAccountType(acc.type)}
                       </Badge>
                       <span className="text-xs text-muted-foreground font-mono">
-                        Base: ${acc.openingBalance.toFixed(2)}
+                        Base: {format(acc.openingBalance)}
                       </span>
                     </div>
                   </div>
@@ -243,7 +245,7 @@ export function AccountsSettingsTab({ accounts, onRefresh }: AccountsSettingsTab
 
             <div className="space-y-1.5">
               <Label htmlFor="accType" className="text-xs">Account Type</Label>
-              <Select value={type} onValueChange={(val: any) => setType(val)}>
+              <Select value={type} onValueChange={(val: AccountRecord["type"]) => setType(val)}>
                 <SelectTrigger id="accType" className="h-9 text-xs">
                   <SelectValue placeholder="Select account type" />
                 </SelectTrigger>

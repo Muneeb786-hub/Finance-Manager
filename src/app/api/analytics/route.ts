@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { addMoney, subtractMoney, calculatePercentage } from "@/lib/decimal"
+import { z } from "zod"
+import { getZonedDay, getZonedMonthRange, getZonedYearMonth } from "@/lib/dates"
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -14,13 +16,23 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const monthsRange = parseInt(searchParams.get("months") || "6", 10) // 3, 6, 12
+    const parsedRange = z.coerce.number().int().refine((value) => [3, 6, 12].includes(value)).safeParse(searchParams.get("months") || "6")
+    if (!parsedRange.success) return NextResponse.json({ message: "Months must be 3, 6, or 12" }, { status: 400 })
+    const monthsRange = parsedRange.data
 
     const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth() + 1
+    const profile = await db.user.findUnique({ where: { id: userId }, select: { timezone: true } })
+    const timezone = profile?.timezone || "UTC"
+    const { year: currentYear, month: currentMonth } = getZonedYearMonth(now, timezone)
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const firstMonthDate = new Date(Date.UTC(currentYear, currentMonth - monthsRange, 1))
+    const rangeStartDate = getZonedMonthRange(firstMonthDate.getUTCFullYear(), firstMonthDate.getUTCMonth() + 1, timezone).start
+    const rangeEndDate = getZonedMonthRange(currentYear, currentMonth, timezone).end
+    const allRangeTransactions = await db.transaction.findMany({
+      where: { userId, date: { gte: rangeStartDate, lte: rangeEndDate } },
+      include: { category: true },
+    })
 
     // 1. Multi-month trends & cumulative net cash flow
     const trends: {
@@ -37,19 +49,15 @@ export async function GET(request: Request) {
     let totalPeriodExpenses = 0
 
     for (let i = monthsRange - 1; i >= 0; i--) {
-      const d = new Date(currentYear, currentMonth - 1 - i, 1)
-      const y = d.getFullYear()
-      const m = d.getMonth() + 1
-      const start = new Date(y, m - 1, 1)
-      const end = new Date(y, m, 0, 23, 59, 59, 999)
-
-      const txs = await db.transaction.findMany({
-        where: {
-          userId,
-          date: { gte: start, lte: end },
-        },
-        select: { type: true, amount: true },
-      })
+      const d = new Date(Date.UTC(currentYear, currentMonth - 1 - i, 1))
+      const y = d.getUTCFullYear()
+      const m = d.getUTCMonth() + 1
+      const txs = allRangeTransactions.filter(
+        (transaction) => {
+          const period = getZonedYearMonth(transaction.date, timezone)
+          return period.year === y && period.month === m
+        }
+      )
 
       const inc = txs.filter((t) => t.type === "INCOME").reduce((acc, t) => addMoney(acc, t.amount), 0)
       const exp = txs.filter((t) => t.type === "EXPENSE").reduce((acc, t) => addMoney(acc, t.amount), 0)
@@ -71,17 +79,6 @@ export async function GET(request: Request) {
     }
 
     // 2. Spending by Category across selected range
-    const rangeStartDate = new Date(currentYear, currentMonth - monthsRange, 1)
-    const rangeEndDate = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999)
-
-    const allRangeTransactions = await db.transaction.findMany({
-      where: {
-        userId,
-        date: { gte: rangeStartDate, lte: rangeEndDate },
-      },
-      include: { category: true },
-    })
-
     const categoryMap: Record<string, { name: string; color: string; amount: number; count: number }> = {}
     const paymentMethodMap: Record<string, number> = {}
 
@@ -120,13 +117,13 @@ export async function GET(request: Request) {
     const dailySpending: { day: number; date: string; amount: number }[] = []
 
     const currentMonthTx = allRangeTransactions.filter((t) => {
-      const d = new Date(t.date)
-      return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear && t.type === "EXPENSE"
+      const period = getZonedYearMonth(t.date, timezone)
+      return period.month === currentMonth && period.year === currentYear && t.type === "EXPENSE"
     })
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dayTotal = currentMonthTx
-        .filter((t) => new Date(t.date).getDate() === day)
+        .filter((t) => getZonedDay(t.date, timezone) === day)
         .reduce((sum, t) => addMoney(sum, t.amount), 0)
 
       dailySpending.push({

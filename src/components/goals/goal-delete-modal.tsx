@@ -45,8 +45,8 @@ export function GoalDeleteModal({
       toast.success("Savings goal deleted successfully")
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete goal")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete goal")
     } finally {
       setIsDeleting(false)
     }

@@ -29,7 +29,7 @@ export default function BudgetsPage() {
     approachingCount: 0,
     overBudgetCount: 0,
   })
-  const [unbudgetedCategories, setUnbudgetedCategories] = React.useState<any[]>([])
+  const [unbudgetedCategories, setUnbudgetedCategories] = React.useState<Array<{ categoryId: string; name: string; color: string; icon: string; spent: number }>>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isCopying, setIsCopying] = React.useState(false)
 
@@ -56,7 +56,7 @@ export default function BudgetsPage() {
         overBudgetCount: 0,
       })
       setUnbudgetedCategories(data.unbudgetedCategories || [])
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
       toast.error("Failed to load budgets for the selected period")
     } finally {
@@ -89,8 +89,8 @@ export default function BudgetsPage() {
         toast.success(data.message)
         fetchBudgets()
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to copy budgets")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to copy budgets")
     } finally {
       setIsCopying(false)
     }

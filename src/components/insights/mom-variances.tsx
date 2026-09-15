@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpRight, ArrowDownRight, Minus, TrendingUp } from "lucide-react"
 import { MonthOverMonthDiff } from "@/lib/insights"
+import { useCurrency } from "@/lib/currency-context"
 
 interface MomVariancesProps {
   variances: MonthOverMonthDiff[]
@@ -11,6 +12,7 @@ interface MomVariancesProps {
 }
 
 export function MomVariances({ variances, monthName }: MomVariancesProps) {
+  const { format } = useCurrency()
   if (variances.length === 0) {
     return (
       <Card className="border-border shadow-sm">
@@ -62,10 +64,10 @@ export function MomVariances({ variances, monthName }: MomVariancesProps) {
                     </div>
                   </td>
                   <td className="py-3 px-2 text-right font-mono text-muted-foreground">
-                    ${v.previousAmount.toFixed(2)}
+                    {format(v.previousAmount)}
                   </td>
                   <td className="py-3 px-2 text-right font-mono font-medium text-foreground">
-                    ${v.currentAmount.toFixed(2)}
+                    {format(v.currentAmount)}
                   </td>
                   <td className="py-3 px-2 text-right font-mono">
                     <span
@@ -77,7 +79,7 @@ export function MomVariances({ variances, monthName }: MomVariancesProps) {
                           : "text-muted-foreground"
                       }
                     >
-                      {v.difference > 0 ? `+$${v.difference.toFixed(2)}` : v.difference < 0 ? `-$${Math.abs(v.difference).toFixed(2)}` : "$0.00"}
+                      {v.difference > 0 ? `+${format(v.difference)}` : v.difference < 0 ? `-${format(Math.abs(v.difference))}` : format(0)}
                     </span>
                   </td>
                   <td className="py-3 pl-2 text-right">

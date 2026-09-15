@@ -133,8 +133,8 @@ export function GoalModal({
 
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setIsSubmitting(false)
     }

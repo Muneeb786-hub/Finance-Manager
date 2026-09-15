@@ -10,6 +10,15 @@ import {
   generateInsightObservations,
   CategorySummary,
 } from "@/lib/insights"
+import { getZonedMonthRange, getZonedYearMonth } from "@/lib/dates"
+import { z } from "zod"
+import { Prisma } from "@prisma/client"
+import { formatCurrency } from "@/lib/utils"
+
+const InsightPeriodSchema = z.object({
+  year: z.coerce.number().int().min(2020).max(2100),
+  month: z.coerce.number().int().min(1).max(12),
+})
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -22,20 +31,22 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const now = new Date()
+    const profile = await db.user.findUnique({ where: { id: userId }, select: { timezone: true, preferredCurrency: true } })
+    const timezone = profile?.timezone || "UTC"
+    const currentPeriod = getZonedYearMonth(now, timezone)
     const yearParam = searchParams.get("year")
     const monthParam = searchParams.get("month")
 
-    const currentYear = yearParam ? parseInt(yearParam, 10) : now.getFullYear()
-    const currentMonth = monthParam ? parseInt(monthParam, 10) : now.getMonth() + 1
+    const parsedPeriod = InsightPeriodSchema.safeParse({ year: yearParam || currentPeriod.year, month: monthParam || currentPeriod.month })
+    if (!parsedPeriod.success) return NextResponse.json({ message: "Invalid insight period" }, { status: 400 })
+    const { year: currentYear, month: currentMonth } = parsedPeriod.data
 
     // Date ranges for current month
-    const startOfMonth = new Date(currentYear, currentMonth - 1, 1)
-    const endOfMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999)
+    const { start: startOfMonth, end: endOfMonth } = getZonedMonthRange(currentYear, currentMonth, timezone)
 
     // Date ranges for previous month
-    const prevDate = new Date(currentYear, currentMonth - 2, 1)
-    const startOfPrevMonth = new Date(prevDate.getFullYear(), prevDate.getMonth(), 1)
-    const endOfPrevMonth = new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 0, 23, 59, 59, 999)
+    const prevDate = new Date(Date.UTC(currentYear, currentMonth - 2, 1))
+    const { start: startOfPrevMonth, end: endOfPrevMonth } = getZonedMonthRange(prevDate.getUTCFullYear(), prevDate.getUTCMonth() + 1, timezone)
 
     // 1. Fetch user accounts and total balance
     const accounts = await db.account.findMany({ where: { userId } })
@@ -155,14 +166,14 @@ export async function GET(request: Request) {
         overBudgets.push({
           name: b.category.name,
           spent,
-          amount: b.amount,
+          amount: b.amount.toNumber(),
           overAmount: Math.max(0, subtractMoney(spent, b.amount)),
         })
       } else if (status === "APPROACHING") {
         nearBudgets.push({
           name: b.category.name,
           spent,
-          amount: b.amount,
+          amount: b.amount.toNumber(),
           percent,
         })
       }
@@ -185,10 +196,10 @@ export async function GET(request: Request) {
     let monthlyRecurringExpenses = 0
     for (const r of recurringList) {
       if (r.type === "EXPENSE") {
-        if (r.frequency === "DAILY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount * 30)
-        else if (r.frequency === "WEEKLY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount * 4.33)
+        if (r.frequency === "DAILY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount.times(30))
+        else if (r.frequency === "WEEKLY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount.times(4.33))
         else if (r.frequency === "MONTHLY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount)
-        else if (r.frequency === "YEARLY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount / 12)
+        else if (r.frequency === "YEARLY") monthlyRecurringExpenses = addMoney(monthlyRecurringExpenses, r.amount.dividedBy(12))
       }
     }
 
@@ -268,11 +279,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
     const now = new Date()
-    const year = body.year ? parseInt(body.year, 10) : now.getFullYear()
-    const month = body.month ? parseInt(body.month, 10) : now.getMonth() + 1
-
-    const startOfMonth = new Date(year, month - 1, 1)
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999)
+    const profile = await db.user.findUnique({ where: { id: userId }, select: { timezone: true, preferredCurrency: true } })
+    const timezone = profile?.timezone || "UTC"
+    const currentPeriod = getZonedYearMonth(now, timezone)
+    const parsedPeriod = InsightPeriodSchema.safeParse({ year: body.year || currentPeriod.year, month: body.month || currentPeriod.month })
+    if (!parsedPeriod.success) return NextResponse.json({ message: "Invalid insight period" }, { status: 400 })
+    const { year, month } = parsedPeriod.data
+    const { start: startOfMonth, end: endOfMonth } = getZonedMonthRange(year, month, timezone)
 
     // Fetch month's transactions and accounts
     const [transactions, accounts, budgets, goals, recurring] = await Promise.all([
@@ -308,10 +321,10 @@ export async function POST(request: Request) {
     let recurringTotal = 0
     for (const r of recurring) {
       if (r.type === "EXPENSE") {
-        if (r.frequency === "DAILY") recurringTotal = addMoney(recurringTotal, r.amount * 30)
-        else if (r.frequency === "WEEKLY") recurringTotal = addMoney(recurringTotal, r.amount * 4.33)
+        if (r.frequency === "DAILY") recurringTotal = addMoney(recurringTotal, r.amount.times(30))
+        else if (r.frequency === "WEEKLY") recurringTotal = addMoney(recurringTotal, r.amount.times(4.33))
         else if (r.frequency === "MONTHLY") recurringTotal = addMoney(recurringTotal, r.amount)
-        else if (r.frequency === "YEARLY") recurringTotal = addMoney(recurringTotal, r.amount / 12)
+        else if (r.frequency === "YEARLY") recurringTotal = addMoney(recurringTotal, r.amount.dividedBy(12))
       }
     }
 
@@ -332,7 +345,7 @@ export async function POST(request: Request) {
       monthlyRecurringExpenses: recurringTotal,
     })
 
-    const summaryText = `${startOfMonth.toLocaleString("default", { month: "long" })} ${year} Financial Health: ${health.rating} (${health.score}/100). Net flow: $${netFlow.toFixed(2)} with a ${health.savingsRate}% savings rate.`
+    const summaryText = `${startOfMonth.toLocaleString("default", { month: "long" })} ${year} Financial Health: ${health.rating} (${health.score}/100). Net flow: ${formatCurrency(netFlow, profile?.preferredCurrency || "USD")} with a ${health.savingsRate}% savings rate.`
 
     const structuredSnapshot = {
       income,
@@ -351,7 +364,7 @@ export async function POST(request: Request) {
         periodStart: startOfMonth,
         periodEnd: endOfMonth,
         summary: summaryText,
-        structuredData: structuredSnapshot as any,
+        structuredData: structuredSnapshot as unknown as Prisma.InputJsonValue,
       },
     })
 

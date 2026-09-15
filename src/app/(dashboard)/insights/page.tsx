@@ -8,13 +8,15 @@ import { Benchmark503020Widget } from "@/components/insights/benchmark-503020"
 import { ObservationsList } from "@/components/insights/observations-list"
 import { MomVariances } from "@/components/insights/mom-variances"
 import { SnapshotHistory } from "@/components/insights/snapshot-history"
+import { fetchJson } from "@/lib/api-client"
+import type { InsightsDto } from "@/types/api"
 
 export default function FinancialInsightsPage() {
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date()
     return { month: d.getMonth() + 1, year: d.getFullYear() }
   })
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<InsightsDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingSnapshot, setSavingSnapshot] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -22,11 +24,7 @@ export default function FinancialInsightsPage() {
   const fetchInsights = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/financial-insights?month=${currentDate.month}&year=${currentDate.year}`)
-      if (res.ok) {
-        const json = await res.json()
-        setData(json)
-      }
+      setData(await fetchJson<InsightsDto>(`/api/financial-insights?month=${currentDate.month}&year=${currentDate.year}`))
     } catch (err) {
       console.error("Failed to load insights", err)
     } finally {

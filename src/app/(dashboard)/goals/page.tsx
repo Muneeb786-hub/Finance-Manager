@@ -51,7 +51,7 @@ export default function GoalsPage() {
         completedCount: 0,
         totalCount: 0,
       })
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
       toast.error("Failed to load savings goals")
     } finally {

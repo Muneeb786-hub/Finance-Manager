@@ -28,11 +28,13 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { fetchJson } from "@/lib/api-client"
+import type { DashboardDto } from "@/types/api"
 
 export default function DashboardPage() {
   const { data: session } = useSession()
   const { format } = useCurrency()
-  const [data, setData] = React.useState<any>(null)
+  const [data, setData] = React.useState<DashboardDto | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [isTransactionModalOpen, setIsTransactionModalOpen] = React.useState(false)
@@ -45,11 +47,8 @@ export default function DashboardPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/dashboard")
-      if (!res.ok) throw new Error("Failed to load dashboard data")
-      const json = await res.json()
-      setData(json)
-    } catch (err: any) {
+      setData(await fetchJson<DashboardDto>("/api/dashboard"))
+    } catch (err: unknown) {
       console.error(err)
       setError("Unable to load dashboard data. Please refresh or try again later.")
     } finally {
@@ -105,6 +104,7 @@ export default function DashboardPage() {
             disabled={isLoading}
             className="h-9 w-9 p-0 border-border/80"
             title="Refresh dashboard"
+            aria-label="Refresh dashboard"
           >
             <RefreshCw className={`h-4 w-4 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
           </Button>

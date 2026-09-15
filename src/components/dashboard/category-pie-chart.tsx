@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts"
+import type { TooltipProps } from "recharts"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 
@@ -28,7 +29,7 @@ const DEFAULT_COLORS = [
   "#64748b",
 ]
 
-function CustomTooltip({ active, payload }: any) {
+function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
   if (active && payload && payload.length) {
     const data = payload[0].payload as CategorySpend
     return (

@@ -5,12 +5,14 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { PieChart, Info } from "lucide-react"
 import { Benchmark503020 } from "@/lib/insights"
+import { useCurrency } from "@/lib/currency-context"
 
 interface Benchmark503020Props {
   benchmark: Benchmark503020
 }
 
 export function Benchmark503020Widget({ benchmark }: Benchmark503020Props) {
+  const { format } = useCurrency()
   const getStatusBadge = (status: "UNDER" | "BALANCED" | "OVER", type: "needs" | "wants" | "savings") => {
     if (status === "BALANCED") {
       return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Optimal</Badge>
@@ -43,7 +45,7 @@ export function Benchmark503020Widget({ benchmark }: Benchmark503020Props) {
             </CardDescription>
           </div>
           <span className="text-xs text-muted-foreground font-medium">
-            Based on ${benchmark.income.toLocaleString("en-US", { minimumFractionDigits: 2 })} Income
+            Based on {format(benchmark.income)} Income
           </span>
         </div>
       </CardHeader>
@@ -96,11 +98,11 @@ export function Benchmark503020Widget({ benchmark }: Benchmark503020Props) {
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Actual Spent</span>
-                <span className="font-semibold">${benchmark.needs.actual.toFixed(2)}</span>
+                <span className="font-semibold">{format(benchmark.needs.actual)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Target Guideline</span>
-                <span className="font-semibold text-muted-foreground">${benchmark.needs.target.toFixed(2)}</span>
+                <span className="font-semibold text-muted-foreground">{format(benchmark.needs.target)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Allocation</span>
@@ -121,11 +123,11 @@ export function Benchmark503020Widget({ benchmark }: Benchmark503020Props) {
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Actual Spent</span>
-                <span className="font-semibold">${benchmark.wants.actual.toFixed(2)}</span>
+                <span className="font-semibold">{format(benchmark.wants.actual)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Target Guideline</span>
-                <span className="font-semibold text-muted-foreground">${benchmark.wants.target.toFixed(2)}</span>
+                <span className="font-semibold text-muted-foreground">{format(benchmark.wants.target)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Allocation</span>
@@ -146,11 +148,11 @@ export function Benchmark503020Widget({ benchmark }: Benchmark503020Props) {
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Net Saved</span>
-                <span className="font-semibold">${benchmark.savings.actual.toFixed(2)}</span>
+                <span className="font-semibold">{format(benchmark.savings.actual)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Target Guideline</span>
-                <span className="font-semibold text-muted-foreground">${benchmark.savings.target.toFixed(2)}</span>
+                <span className="font-semibold text-muted-foreground">{format(benchmark.savings.target)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Allocation</span>

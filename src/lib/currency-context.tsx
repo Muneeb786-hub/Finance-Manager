@@ -65,7 +65,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
     // Silently update user profile in DB
     fetch("/api/auth/profile", {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ preferredCurrency: newCode }),
     }).catch(() => {})

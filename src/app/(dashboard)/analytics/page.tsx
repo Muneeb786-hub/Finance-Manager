@@ -8,20 +8,20 @@ import { MultiTrendChart } from "@/components/analytics/multi-trend-chart"
 import { CategoryBreakdownTable } from "@/components/analytics/category-breakdown-table"
 import { PaymentMethodChart } from "@/components/analytics/payment-method-chart"
 import { DailySpendingChart } from "@/components/analytics/daily-spending-chart"
+import { useCurrency } from "@/lib/currency-context"
+import { fetchJson } from "@/lib/api-client"
+import type { AnalyticsDto } from "@/types/api"
 
 export default function AnalyticsPage() {
+  const { format } = useCurrency()
   const [monthsRange, setMonthsRange] = useState(6)
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<AnalyticsDto | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/analytics?months=${monthsRange}`)
-      if (res.ok) {
-        const json = await res.json()
-        setData(json)
-      }
+      setData(await fetchJson<AnalyticsDto>(`/api/analytics?months=${monthsRange}`))
     } catch (err) {
       console.error("Failed to load analytics", err)
     } finally {
@@ -110,10 +110,10 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="mt-2">
                   <span className="text-xl font-bold text-foreground">
-                    ${data.metrics.totalPeriodIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {format(data.metrics.totalPeriodIncome)}
                   </span>
                   <span className="text-[11px] text-muted-foreground block mt-0.5">
-                    Avg: ${data.metrics.averageMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })}/mo
+                    Avg: {format(data.metrics.averageMonthlyIncome)}/mo
                   </span>
                 </div>
               </CardContent>
@@ -129,10 +129,10 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="mt-2">
                   <span className="text-xl font-bold text-foreground">
-                    ${data.metrics.totalPeriodExpenses.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {format(data.metrics.totalPeriodExpenses)}
                   </span>
                   <span className="text-[11px] text-muted-foreground block mt-0.5">
-                    Avg: ${data.metrics.averageMonthlyExpenses.toLocaleString("en-US", { minimumFractionDigits: 2 })}/mo
+                    Avg: {format(data.metrics.averageMonthlyExpenses)}/mo
                   </span>
                 </div>
               </CardContent>
@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="mt-2">
                   <span className={`text-xl font-bold ${data.metrics.netPeriodSavings >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                    {data.metrics.netPeriodSavings >= 0 ? "+" : ""}${data.metrics.netPeriodSavings.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {data.metrics.netPeriodSavings >= 0 ? "+" : ""}{format(data.metrics.netPeriodSavings)}
                   </span>
                   <span className="text-[11px] text-muted-foreground block mt-0.5">
                     Cumulative {monthsRange}-month margin

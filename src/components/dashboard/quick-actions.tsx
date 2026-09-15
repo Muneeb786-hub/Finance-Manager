@@ -33,10 +33,10 @@ export function QuickActions({ onAddTransaction, onSimulateBankSync }: QuickActi
           size="sm"
           onClick={onSimulateBankSync}
           className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-          title="Simulate incoming charge from Credit Card, Easypaisa, or Bank"
+          title="Open the simulated SMS charge workflow"
         >
           <Zap className="h-4 w-4 text-primary" />
-          Sync Card / Bank
+          Demo SMS Sync
         </Button>
       )}
 

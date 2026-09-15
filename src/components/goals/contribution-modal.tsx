@@ -103,8 +103,8 @@ export function ContributionModal({
 
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setIsSubmitting(false)
     }
@@ -120,9 +120,9 @@ export function ContributionModal({
           <DialogDescription>
             {goal?.title}: Current balance is{" "}
             <span className="font-semibold text-foreground">
-              {goal ? formatCurrency(goal.currentAmount) : "$0.00"}
+              {goal ? formatCurrency(goal.currentAmount) : formatCurrency(0)}
             </span>{" "}
-            of {goal ? formatCurrency(goal.targetAmount) : "$0.00"}.
+            of {goal ? formatCurrency(goal.targetAmount) : formatCurrency(0)}.
           </DialogDescription>
         </DialogHeader>
 

@@ -13,7 +13,7 @@ interface GoalItem {
   name?: string
   targetAmount: number
   currentAmount: number
-  targetDate?: string
+  targetDate?: string | null
   percentage: number
   remaining: number
 }

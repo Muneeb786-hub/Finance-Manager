@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts"
+import type { TooltipProps } from "recharts"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 
@@ -23,7 +24,7 @@ interface DailySpendingChartProps {
   data: DailySpendingPoint[]
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-border bg-background/95 p-2.5 shadow-md backdrop-blur-sm text-xs">
@@ -31,7 +32,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Expenses:</span>
           <span className="font-mono font-semibold text-foreground">
-            {formatCurrency(payload[0].value)}
+            {formatCurrency(payload[0].value ?? 0)}
           </span>
         </div>
       </div>
@@ -70,7 +71,7 @@ export function DailySpendingChart({ data }: DailySpendingChartProps) {
             </p>
           </div>
         ) : (
-          <div className="h-[260px] w-full">
+          <div className="h-[260px] w-full" role="img" aria-label="Daily expense totals for the current month">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
@@ -88,7 +89,7 @@ export function DailySpendingChart({ data }: DailySpendingChartProps) {
                   tickLine={false}
                   axisLine={false}
                   fontSize={11}
-                  tickFormatter={(val) => `$${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}`}
+                  tickFormatter={(val) => formatCurrency(val)}
                   className="text-muted-foreground"
                 />
                 <Tooltip content={<CustomTooltip />} />

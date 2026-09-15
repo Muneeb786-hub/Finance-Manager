@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts"
+import type { TooltipProps } from "recharts"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 
@@ -24,13 +25,13 @@ interface CashFlowChartProps {
   data: CashFlowDataPoint[]
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-border/80 bg-background/95 p-3 shadow-md backdrop-blur-sm">
         <p className="text-xs font-semibold text-foreground mb-1.5">{label}</p>
         <div className="space-y-1">
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <div key={`tooltip-${index}`} className="flex items-center justify-between gap-4 text-xs">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <span
@@ -40,7 +41,7 @@ function CustomTooltip({ active, payload, label }: any) {
                 {entry.name}
               </span>
               <span className="font-semibold text-foreground">
-                {formatCurrency(entry.value)}
+                {formatCurrency(entry.value ?? 0)}
               </span>
             </div>
           ))}
@@ -85,7 +86,7 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
             </p>
           </div>
         ) : (
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full" role="img" aria-label="Income and expenses for the past six months">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
@@ -104,7 +105,7 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
                   tickLine={false}
                   axisLine={false}
                   fontSize={11}
-                  tickFormatter={(val) => `$${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}`}
+                  tickFormatter={(val) => formatCurrency(val)}
                   className="text-muted-foreground"
                 />
                 <Tooltip content={<CustomTooltip />} />

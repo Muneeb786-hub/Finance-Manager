@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { addMoney, subtractMoney, calculatePercentage, getBudgetStatus } from "@/lib/decimal"
+import { getZonedMonthRange, getZonedYearMonth } from "@/lib/dates"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -14,18 +15,15 @@ export async function GET() {
 
   try {
     const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth() + 1 // 1-indexed (1-12)
+    const profile = await db.user.findUnique({
+      where: { id: userId },
+      select: { onboardingComplete: true, preferredCurrency: true, name: true, timezone: true },
+    })
+    const timezone = profile?.timezone || "UTC"
+    const { year: currentYear, month: currentMonth } = getZonedYearMonth(now, timezone)
 
     // Current month start & end dates
-    const startOfMonth = new Date(currentYear, currentMonth - 1, 1)
-    const endOfMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999)
-
-    // Fetch user profile status
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { onboardingComplete: true, preferredCurrency: true, name: true },
-    })
+    const { start: startOfMonth, end: endOfMonth } = getZonedMonthRange(currentYear, currentMonth, timezone)
 
     // 1. Fetch all accounts and user assets
     const [accounts, assets] = await Promise.all([
@@ -49,19 +47,19 @@ export async function GET() {
     const assetsTotal = assets.reduce((sum, a) => addMoney(sum, a.value), 0)
     const totalBalance = assets.length > 0 ? assetsTotal : accountsBalance
 
-    // 3. Current month transactions
-    const currentMonthTransactions = await db.transaction.findMany({
+    // Fetch the complete six-month reporting range once, then group in memory.
+    const firstTrendMonth = new Date(Date.UTC(currentYear, currentMonth - 6, 1))
+    const sixMonthStart = getZonedMonthRange(firstTrendMonth.getUTCFullYear(), firstTrendMonth.getUTCMonth() + 1, timezone).start
+    const trendTransactions = await db.transaction.findMany({
       where: {
         userId,
-        date: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
+        date: { gte: sixMonthStart, lte: endOfMonth },
       },
-      include: {
-        category: true,
-      },
+      include: { category: true },
     })
+    const currentMonthTransactions = trendTransactions.filter(
+      (transaction) => transaction.date >= startOfMonth && transaction.date <= endOfMonth
+    )
 
     let currentMonthIncome = 0
     let currentMonthExpenses = 0
@@ -100,19 +98,15 @@ export async function GET() {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(currentYear, currentMonth - 1 - i, 1)
-      const y = d.getFullYear()
-      const m = d.getMonth() + 1
-      const start = new Date(y, m - 1, 1)
-      const end = new Date(y, m, 0, 23, 59, 59, 999)
-
-      const monthTx = await db.transaction.findMany({
-        where: {
-          userId,
-          date: { gte: start, lte: end },
-        },
-        select: { type: true, amount: true },
-      })
+      const d = new Date(Date.UTC(currentYear, currentMonth - 1 - i, 1))
+      const y = d.getUTCFullYear()
+      const m = d.getUTCMonth() + 1
+      const monthTx = trendTransactions.filter(
+        (transaction) => {
+          const period = getZonedYearMonth(transaction.date, timezone)
+          return period.year === y && period.month === m
+        }
+      )
 
       const inc = monthTx.filter((t) => t.type === "INCOME").reduce((sum, t) => addMoney(sum, t.amount), 0)
       const exp = monthTx.filter((t) => t.type === "EXPENSE").reduce((sum, t) => addMoney(sum, t.amount), 0)
@@ -187,9 +181,9 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      onboardingComplete: user?.onboardingComplete ?? true,
+      onboardingComplete: profile?.onboardingComplete ?? true,
       totalTransactionsCount: allTransactions.length,
-      preferredCurrency: user?.preferredCurrency || "USD",
+      preferredCurrency: profile?.preferredCurrency || "USD",
       metrics: {
         totalBalance,
         currentMonthIncome,

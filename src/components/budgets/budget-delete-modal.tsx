@@ -45,8 +45,8 @@ export function BudgetDeleteModal({
       toast.success("Budget removed successfully")
       onSuccess()
       onClose()
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete budget")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete budget")
     } finally {
       setIsDeleting(false)
     }

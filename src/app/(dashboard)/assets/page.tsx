@@ -51,6 +51,11 @@ interface CategoryBreakdown {
   percent: number
 }
 
+interface AssetsResponse {
+  assets: Asset[]
+  summary: { totalNetWorth: number; assetCount: number; categoryBreakdown: CategoryBreakdown[] }
+}
+
 // Helper to choose dynamic colors/icons based on category name
 function getCategoryMeta(categoryName: string) {
   const lower = (categoryName || "").toLowerCase()
@@ -88,7 +93,7 @@ const QUICK_CATEGORY_SUGGESTIONS = [
 
 export default function AssetsPage() {
   const { format } = useCurrency()
-  const [data, setData] = React.useState<any>(null)
+  const [data, setData] = React.useState<AssetsResponse | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [activeFilter, setActiveFilter] = React.useState<string>("ALL")
 
@@ -115,7 +120,7 @@ export default function AssetsPage() {
       if (!res.ok) throw new Error("Failed to load assets")
       const json = await res.json()
       setData(json)
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to load assets")
       console.error(err)
     } finally {
@@ -207,8 +212,8 @@ export default function AssetsPage() {
 
       setIsModalOpen(false)
       fetchAssets()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save asset")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save asset")
     } finally {
       setIsSubmitting(false)
     }
@@ -223,8 +228,8 @@ export default function AssetsPage() {
       toast.success("Asset removed successfully")
       setDeleteTarget(null)
       fetchAssets()
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete asset")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete asset")
     } finally {
       setIsSubmitting(false)
     }

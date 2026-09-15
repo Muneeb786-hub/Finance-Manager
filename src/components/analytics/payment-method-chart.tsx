@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useCurrency } from "@/lib/currency-context"
 import { CreditCard, Wallet, Banknote, Smartphone } from "lucide-react"
 
 interface PaymentMethodItem {
@@ -14,6 +15,7 @@ interface PaymentMethodChartProps {
 }
 
 export function PaymentMethodChart({ methods }: PaymentMethodChartProps) {
+  const { format } = useCurrency()
   const getMethodIcon = (method: string) => {
     switch (method.toUpperCase()) {
       case "CREDIT_CARD":
@@ -75,7 +77,7 @@ export function PaymentMethodChart({ methods }: PaymentMethodChartProps) {
               </div>
             </div>
             <span className="font-mono font-bold text-foreground">
-              ${m.amount.toFixed(2)}
+              {format(m.amount)}
             </span>
           </div>
         ))}

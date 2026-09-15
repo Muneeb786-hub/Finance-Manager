@@ -13,7 +13,7 @@ interface TransactionItem {
   amount: number
   date: string
   description: string
-  paymentMethod?: string
+  paymentMethod?: string | null
   category?: {
     name: string
     color: string
@@ -21,7 +21,7 @@ interface TransactionItem {
   }
   account?: {
     name: string
-  }
+  } | null
 }
 
 interface RecentTransactionsWidgetProps {

@@ -164,8 +164,8 @@ export function RecurringModal({
 
       onSuccess()
       onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setIsSubmitting(false)
     }
@@ -254,7 +254,7 @@ export function RecurringModal({
               <Label htmlFor="frequency">Frequency</Label>
               <Select
                 value={currentFrequency}
-                onValueChange={(val: any) => setValue("frequency", val, { shouldValidate: true })}
+                onValueChange={(val: RecurringFormValues["frequency"]) => setValue("frequency", val, { shouldValidate: true })}
               >
                 <SelectTrigger id="frequency">
                   <SelectValue placeholder="Select frequency" />
