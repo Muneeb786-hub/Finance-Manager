@@ -7,6 +7,7 @@ import { TransactionFilters } from "@/components/transactions/transaction-filter
 import { TransactionModal } from "@/components/transactions/transaction-modal"
 import { DeleteConfirmModal } from "@/components/transactions/delete-confirm-modal"
 import { PendingSyncBanner } from "@/components/bank-sync/pending-sync-banner"
+import { CsvImportModal } from "@/components/transactions/csv-import-modal"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { useCurrency } from "@/lib/currency-context"
 import {
@@ -20,15 +21,18 @@ import {
   ArrowUpRight,
   Tag,
   Loader2,
+  Upload,
 } from "lucide-react"
 import { toast } from "sonner"
+import type { CategoryDto, TransactionDto } from "@/types/api"
 
 export default function TransactionsPage() {
   const { format } = useCurrency()
-  const [transactions, setTransactions] = React.useState<any[]>([])
-  const [categories, setCategories] = React.useState<any[]>([])
+  const [transactions, setTransactions] = React.useState<TransactionDto[]>([])
+  const [categories, setCategories] = React.useState<CategoryDto[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isExporting, setIsExporting] = React.useState(false)
+  const [isImportOpen, setIsImportOpen] = React.useState(false)
 
   // Filters state
   const [filters, setFilters] = React.useState({
@@ -57,7 +61,7 @@ export default function TransactionsPage() {
 
   // Modal states
   const [isTransactionModalOpen, setIsTransactionModalOpen] = React.useState(false)
-  const [editingTransaction, setEditingTransaction] = React.useState<any | null>(null)
+  const [editingTransaction, setEditingTransaction] = React.useState<TransactionDto | null>(null)
   const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null)
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = React.useState(false)
 
@@ -102,8 +106,8 @@ export default function TransactionsPage() {
       }))
       // Reset selected IDs if they are no longer in the fetched list
       setSelectedIds([])
-    } catch (err: any) {
-      toast.error(err.message || "Error loading transactions")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error loading transactions")
     } finally {
       setIsLoading(false)
     }
@@ -155,8 +159,8 @@ export default function TransactionsPage() {
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       toast.success("CSV export downloaded")
-    } catch (err: any) {
-      toast.error(err.message || "Failed to export CSV")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to export CSV")
     } finally {
       setIsExporting(false)
     }
@@ -200,6 +204,10 @@ export default function TransactionsPage() {
             </Button>
           )}
 
+          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-1.5 text-xs">
+            <Upload className="h-3.5 w-3.5" /> Import CSV
+          </Button>
+
           <Button
             size="sm"
             onClick={() => {
@@ -213,6 +221,8 @@ export default function TransactionsPage() {
           </Button>
         </div>
       </div>
+
+      <CsvImportModal open={isImportOpen} onOpenChange={setIsImportOpen} onImported={fetchTransactions} />
 
       {/* Pending Bank / Card Sync Transactions Banner */}
       <PendingSyncBanner onTransactionApproved={fetchTransactions} />
