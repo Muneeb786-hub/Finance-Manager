@@ -5,6 +5,9 @@ import {
   verifyTwoFactorToken,
   generateBackupCodes,
   verifyAndConsumeBackupCode,
+  decryptTwoFactorSecret,
+  encryptTwoFactorSecret,
+  hashBackupCodes,
 } from "@/lib/two-factor"
 
 describe("Two-Factor Authentication (2FA) Engine", () => {
@@ -22,8 +25,10 @@ describe("Two-Factor Authentication (2FA) Engine", () => {
   it("successfully validates correct TOTP token and rejects invalid token", () => {
     const secret = generateSecret()
     const validToken = generateSync({ secret })
+    const previousStepToken = generateSync({ secret, epoch: Math.floor(Date.now() / 1000) - 30 })
 
     expect(verifyTwoFactorToken(validToken, secret)).toBe(true)
+    expect(verifyTwoFactorToken(previousStepToken, secret)).toBe(true)
     expect(verifyTwoFactorToken("000000", secret)).toBe(false)
     expect(verifyTwoFactorToken("12345", secret)).toBe(false)
     expect(verifyTwoFactorToken("", secret)).toBe(false)
@@ -43,24 +48,35 @@ describe("Two-Factor Authentication (2FA) Engine", () => {
     expect(unique.size).toBe(8)
   })
 
-  it("verifies and consumes a backup code once (case and dash insensitive)", () => {
+  it("verifies and consumes a backup code once (case and dash insensitive)", async () => {
     const codes = ["A1B2-C3D4", "E5F6-G7H8", "1122-3344"]
 
     // Test exact match
-    const result1 = verifyAndConsumeBackupCode("A1B2-C3D4", codes)
+    const result1 = await verifyAndConsumeBackupCode("A1B2-C3D4", codes)
     expect(result1.valid).toBe(true)
     expect(result1.remainingCodes).toHaveLength(2)
     expect(result1.remainingCodes).not.toContain("A1B2-C3D4")
 
     // Test lowercase without dash match
-    const result2 = verifyAndConsumeBackupCode("e5f6g7h8", result1.remainingCodes)
+    const result2 = await verifyAndConsumeBackupCode("e5f6g7h8", result1.remainingCodes)
     expect(result2.valid).toBe(true)
     expect(result2.remainingCodes).toHaveLength(1)
     expect(result2.remainingCodes).toContain("1122-3344")
 
     // Test invalid code
-    const result3 = verifyAndConsumeBackupCode("WRONG-CODE", result2.remainingCodes)
+    const result3 = await verifyAndConsumeBackupCode("WRONG-CODE", result2.remainingCodes)
     expect(result3.valid).toBe(false)
     expect(result3.remainingCodes).toEqual(result2.remainingCodes)
+  })
+
+  it("encrypts TOTP secrets and hashes recovery codes at rest", async () => {
+    process.env.TWO_FACTOR_ENCRYPTION_KEY = "unit-test-encryption-key-at-least-32-characters"
+    const encrypted = encryptTwoFactorSecret("TOTP-SECRET")
+    expect(encrypted).not.toContain("TOTP-SECRET")
+    expect(decryptTwoFactorSecret(encrypted)).toBe("TOTP-SECRET")
+
+    const hashes = await hashBackupCodes(["A1B2-C3D4"])
+    expect(hashes[0]).not.toContain("A1B2")
+    expect((await verifyAndConsumeBackupCode("a1b2c3d4", hashes)).valid).toBe(true)
   })
 })

@@ -2,7 +2,8 @@ import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
-import { verifyTwoFactorToken, verifyAndConsumeBackupCode } from "@/lib/two-factor"
+import { decryptTwoFactorSecret, encryptTwoFactorSecret, secureStoredBackupCodes, verifyTwoFactorToken, verifyAndConsumeBackupCode } from "@/lib/two-factor"
+import { checkRateLimit, configuredLimit, getClientAddress } from "@/lib/rate-limit"
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -19,7 +20,10 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
         twoFactorCode: { label: "2FA Code", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
+        const address = getClientAddress(request)
+        const rate = checkRateLimit("login", address, configuredLimit("RATE_LIMIT_LOGIN_MAX", 10), 15 * 60 * 1000)
+        if (!rate.allowed) throw new Error("RATE_LIMITED")
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -47,19 +51,23 @@ export const authOptions: NextAuthOptions = {
 
           let isCodeValid = false
           if (user.twoFactorSecret) {
-            isCodeValid = verifyTwoFactorToken(twoFactorCode, user.twoFactorSecret)
+            const decryptedSecret = decryptTwoFactorSecret(user.twoFactorSecret)
+            isCodeValid = verifyTwoFactorToken(twoFactorCode, decryptedSecret)
+            if (isCodeValid && !user.twoFactorSecret.startsWith("enc:v1:")) {
+              await db.user.update({ where: { id: user.id }, data: { twoFactorSecret: encryptTwoFactorSecret(decryptedSecret) } })
+            }
           }
 
           // If TOTP check failed, check emergency backup recovery codes
           if (!isCodeValid && user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
-            const backupResult = verifyAndConsumeBackupCode(twoFactorCode, user.twoFactorBackupCodes)
+            const backupResult = await verifyAndConsumeBackupCode(twoFactorCode, user.twoFactorBackupCodes)
             if (backupResult.valid) {
-              isCodeValid = true
-              // Consume the used backup code
-              await db.user.update({
-                where: { id: user.id },
-                data: { twoFactorBackupCodes: backupResult.remainingCodes },
-              }).catch(() => {})
+              const securedRemainingCodes = await secureStoredBackupCodes(backupResult.remainingCodes)
+              const consumed = await db.user.updateMany({
+                where: { id: user.id, twoFactorBackupCodes: { equals: user.twoFactorBackupCodes } },
+                data: { twoFactorBackupCodes: securedRemainingCodes },
+              })
+              isCodeValid = consumed.count === 1
             }
           }
 

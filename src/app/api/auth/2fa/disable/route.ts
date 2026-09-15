@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
-import { verifyTwoFactorToken, verifyAndConsumeBackupCode } from "@/lib/two-factor"
+import { decryptTwoFactorSecret, verifyTwoFactorToken, verifyAndConsumeBackupCode } from "@/lib/two-factor"
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -38,8 +38,8 @@ export async function POST(req: Request) {
 
     // If a 2FA code is provided, verify it as well for defense in depth
     if (code && user.twoFactorSecret) {
-      const isTokenValid = verifyTwoFactorToken(code, user.twoFactorSecret)
-      const isBackupValid = verifyAndConsumeBackupCode(code, user.twoFactorBackupCodes).valid
+      const isTokenValid = verifyTwoFactorToken(code, decryptTwoFactorSecret(user.twoFactorSecret))
+      const isBackupValid = (await verifyAndConsumeBackupCode(code, user.twoFactorBackupCodes)).valid
       if (!isTokenValid && !isBackupValid) {
         return NextResponse.json({ message: "Invalid 2FA code" }, { status: 400 })
       }

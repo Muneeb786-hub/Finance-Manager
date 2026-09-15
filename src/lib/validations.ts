@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { isValidTimeZone } from "@/lib/dates"
 
 export const RegisterSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -13,7 +14,7 @@ export const LoginSchema = z.object({
 
 export const TransactionSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: z.coerce.number().finite().positive("Amount must be greater than 0"),
   categoryId: z.string().min(1, "Category is required"),
   accountId: z.string().optional().nullable(),
   date: z.string().min(1, "Date is required"),
@@ -25,7 +26,7 @@ export const TransactionSchema = z.object({
 
 export const BudgetSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
-  amount: z.coerce.number().positive("Budget amount must be greater than 0"),
+  amount: z.coerce.number().finite().positive("Budget amount must be greater than 0"),
   month: z.coerce.number().int().min(1).max(12),
   year: z.coerce.number().int().min(2020).max(2100),
   alertThreshold: z.coerce.number().min(1).max(100).default(80),
@@ -34,8 +35,8 @@ export const BudgetSchema = z.object({
 export const SavingsGoalSchema = z.object({
   title: z.string().min(1, "Title is required"),
   category: z.string().optional().nullable().default("General"),
-  targetAmount: z.coerce.number().positive("Target amount must be greater than 0"),
-  currentAmount: z.coerce.number().min(0).default(0),
+  targetAmount: z.coerce.number().finite().positive("Target amount must be greater than 0"),
+  currentAmount: z.coerce.number().finite().min(0).default(0),
   targetDate: z.string().optional().nullable(),
   icon: z.string().default("target"),
   color: z.string().default("#3b82f6"),
@@ -44,14 +45,14 @@ export const SavingsGoalSchema = z.object({
 
 export const GoalContributionSchema = z.object({
   goalId: z.string().min(1, "Goal ID is required"),
-  amount: z.coerce.number().positive("Contribution must be greater than 0"),
+  amount: z.coerce.number().finite().positive("Contribution must be greater than 0"),
   type: z.enum(["CONTRIBUTION", "WITHDRAWAL"]).default("CONTRIBUTION"),
   note: z.string().optional().nullable(),
 })
 
 export const RecurringTransactionSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: z.coerce.number().finite().positive("Amount must be greater than 0"),
   categoryId: z.string().min(1, "Category is required"),
   accountId: z.string().optional().nullable(),
   description: z.string().min(1, "Description is required"),
@@ -65,7 +66,7 @@ export const RecurringTransactionSchema = z.object({
 export const ProfileSettingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   preferredCurrency: z.string().default("USD"),
-  timezone: z.string().default("UTC"),
+  timezone: z.string().refine(isValidTimeZone, "Invalid IANA timezone").default("UTC"),
 })
 
 export const NotificationSchema = z.object({
@@ -88,8 +89,8 @@ export const AccountDataWipeSchema = z.object({
 export const AssetSchema = z.object({
   name: z.string().min(1, "Asset name is required").max(100),
   category: z.string().min(1, "Category is required").max(50),
-  value: z.coerce.number().min(0, "Asset value cannot be negative"),
-  quantity: z.coerce.number().optional().nullable(),
+  value: z.coerce.number().finite().min(0, "Asset value cannot be negative"),
+  quantity: z.coerce.number().finite().optional().nullable(),
   unit: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 })
@@ -97,11 +98,11 @@ export const AssetSchema = z.object({
 export const OnboardingSetupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   preferredCurrency: z.string().default("USD"),
-  timezone: z.string().default("UTC"),
-  initialBalance: z.coerce.number().min(0).default(0),
+  timezone: z.string().refine(isValidTimeZone, "Invalid IANA timezone").default("UTC"),
+  initialBalance: z.coerce.number().finite().min(0).default(0),
   budgetCategoryId: z.string().optional(),
-  budgetAmount: z.coerce.number().positive().optional().nullable(),
+  budgetAmount: z.coerce.number().finite().positive().optional().nullable(),
   goalTitle: z.string().optional(),
-  goalTargetAmount: z.coerce.number().positive().optional().nullable(),
+  goalTargetAmount: z.coerce.number().finite().positive().optional().nullable(),
   seedDemoData: z.boolean().default(false),
 })

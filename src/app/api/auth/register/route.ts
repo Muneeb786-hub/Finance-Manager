@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { RegisterSchema } from "@/lib/validations"
+import { checkRateLimit, getClientAddress, rateLimitResponse } from "@/lib/rate-limit"
 
 const DEFAULT_INCOME_CATEGORIES = [
   { name: "Salary", icon: "briefcase", color: "#10b981" },
@@ -32,6 +33,9 @@ const DEFAULT_ACCOUNTS = [
 ]
 
 export async function POST(req: Request) {
+  const rate = checkRateLimit("registration", getClientAddress(req), 5, 60 * 60 * 1000)
+  if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds)
+
   try {
     const body = await req.json()
     const validatedData = RegisterSchema.safeParse(body)
@@ -103,7 +107,7 @@ export async function POST(req: Request) {
           data: {
             userId: newUser.id,
             name: acc.name,
-            type: acc.type as any,
+            type: acc.type as "CASH" | "BANK_ACCOUNT" | "DIGITAL_WALLET" | "CREDIT_CARD",
             openingBalance: acc.openingBalance,
           },
         })
