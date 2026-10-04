@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { parseBankAlert, detectMerchantAndCategory, SAMPLE_SMS_TEMPLATES } from '@/lib/merchant-sync';
 
 describe('Bank & Card Transaction Alert Parser', () => {
-  it('parses credit card charge for OpenAI (Rs. 5,600) with card ending digits', () => {
+  it('parses credit card charge for Netflix (Rs. 5,600) with card ending digits', () => {
     const rawSms =
-      'Dear Customer, transaction of Rs 5,600.00 carried out on your Card ending 4242 at OPENAI on 06-Sep-2026. Available balance: Rs 42,000.';
+      'Dear Customer, transaction of Rs 5,600.00 carried out on your Card ending 4242 at NETFLIX on 06-Sep-2026. Available balance: Rs 42,000.';
     const result = parseBankAlert(rawSms);
 
     expect(result.amount).toBe(5600);
-    expect(result.merchant).toBe('OpenAI');
+    expect(result.merchant).toBe('Netflix');
     expect(result.suggestedCategoryName).toBe('Subscriptions');
     expect(result.channel).toBe('CARD');
     expect(result.extractedIdentifier).toBe('4242');
@@ -16,11 +16,11 @@ describe('Bank & Card Transaction Alert Parser', () => {
 
   it('parses Easypaisa 3737 transaction with mobile account number', () => {
     const rawSms =
-      'You have paid Rs. 5,600.00 to OPENAI from Mobile Account 03001234567. Balance: Rs. 14,200.00. Trans ID: 1234567890';
+      'You have paid Rs. 5,600.00 to NETFLIX from Mobile Account 03001234567. Balance: Rs. 14,200.00. Trans ID: 1234567890';
     const result = parseBankAlert(rawSms);
 
     expect(result.amount).toBe(5600);
-    expect(result.merchant).toBe('OpenAI');
+    expect(result.merchant).toBe('Netflix');
     expect(result.channel).toBe('EASYPAISA');
     expect(result.providerHint).toBe('EASYPAISA');
     expect(result.extractedIdentifier).toBe('03001234567');
@@ -38,13 +38,13 @@ describe('Bank & Card Transaction Alert Parser', () => {
     expect(result.extractedIdentifier).toBe('03011234567');
   });
 
-  it('parses Meezan Bank debit card charge for OpenAI (Rs. 5,600)', () => {
+  it('parses Meezan Bank debit card charge for Netflix (Rs. 5,600)', () => {
     const rawSms =
-      'Paid Rs. 5,600.00 at OPENAI using Meezan Visa Debit Card ending 4242 on 06-09-2026. Available Balance: PKR 88,400.00';
+      'Paid Rs. 5,600.00 at NETFLIX using Meezan Visa Debit Card ending 4242 on 06-09-2026. Available Balance: PKR 88,400.00';
     const result = parseBankAlert(rawSms);
 
     expect(result.amount).toBe(5600);
-    expect(result.merchant).toBe('OpenAI');
+    expect(result.merchant).toBe('Netflix');
     expect(result.channel).toBe('BANK');
     expect(result.providerHint).toBe('MEEZAN_BANK');
     expect(result.extractedIdentifier).toBe('4242');

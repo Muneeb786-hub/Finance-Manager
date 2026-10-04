@@ -161,7 +161,7 @@ export function SimulateSyncModal({
                   id="merchant"
                   value={merchant}
                   onChange={(e) => setMerchant(e.target.value)}
-                  placeholder="e.g. OpenAI, Spotify, Shell, Store name"
+                  placeholder="e.g. Netflix, Spotify, Shell, Store name"
                   className="h-9 text-xs"
                   autoFocus
                 />

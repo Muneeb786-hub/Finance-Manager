@@ -17,7 +17,7 @@ All notable changes to the Personal Finance Manager project will be documented i
 ## [0.11.0] - 2026-09-06
 ### Added
 - Milestone 11: End-to-End Integration Test Suite, Web App Manifest & Offline Assets, and API Documentation Finalization.
-- Comprehensive financial lifecycle integration test suite (`tests/integration/flow.test.ts`) covering user registration, multi-account decimal precision cash flows, budget threshold warnings, savings milestones, recurring date advancement, health score evaluations, month-over-month shifts, and double-confirmation data wipe.
+- Financial lifecycle integration test suite (`tests/integration/flow.test.ts`) covering user registration, multi-account decimal precision cash flows, budget threshold warnings, savings milestones, recurring date advancement, health score evaluations, month-over-month shifts, and double-confirmation data wipe.
 - Next.js 14 App Router web app manifest (`src/app/manifest.ts`) providing PWA installation capabilities, custom theme colors, and standalone window configuration.
 - Completely finalized REST API documentation (`docs/api.md`) indexing all 30+ endpoints across Authentication, Accounts, Categories, Transactions, Budgets, Goals, Recurring Cash Flow, Financial Insights, Analytics, Notifications, Onboarding, and Data Portability.
 
@@ -92,11 +92,11 @@ All notable changes to the Personal Finance Manager project will be documented i
 - Real-time spending progress bars with threshold alert badges (`On Track`, `Near Limit`, `Over Budget`).
 - Modal dialogs for setting, editing, and deleting category budgets.
 - Unbudgeted expense warnings identifying spending in categories without configured caps.
-- Comprehensive unit tests for budget schema validation, threshold statuses, and remaining buffer math (`tests/unit/budgets.test.ts`).
+- Unit tests for budget schema validation, threshold statuses, and remaining buffer math (`tests/unit/budgets.test.ts`).
 
 ## [0.3.0] - 2026-09-02
 ### Added
-- Milestone 3: Comprehensive financial dashboard and visual analytics suite.
+- Milestone 3: Financial dashboard and visual analytics suite.
 - Central aggregated dashboard API (`/api/dashboard`) computing net balances, cash flow metrics, category breakdowns, 6-month trends, budgets, and savings goals.
 - Interactive cash flow historical trend chart and category spending donut breakdown powered by Recharts.
 - Key financial metric cards for net worth, monthly income, monthly expenses, and cash flow surplus/deficit.
@@ -127,4 +127,4 @@ All notable changes to the Personal Finance Manager project will be documented i
 - Public landing page with product features, privacy statement, and educational disclaimer.
 - Sign-in and Sign-up authentication pages with React Hook Form and Zod validation.
 - Responsive application layout with desktop sidebar, mobile navigation, and light/dark theme toggle.
-- Comprehensive technical documentation suite (`README.md`, `docs/architecture.md`, `docs/security.md`, `docs/development.md`, `docs/database.md`, `docs/api.md`).
+- Technical docs (`README.md`, `docs/architecture.md`, `docs/security.md`, `docs/development.md`, `docs/database.md`, `docs/api.md`).

@@ -334,9 +334,9 @@ export async function seedUserDemoData(userId: string, client: Prisma.Transactio
     // Seed realistic demo subscriptions
     const subList = [
       {
-        description: "ChatGPT Plus",
-        amount: 20.0,
-        subcategory: "AI",
+        description: "Netflix Standard",
+        amount: 15.49,
+        subcategory: "Streaming",
         dayOffset: 4,
       },
       {

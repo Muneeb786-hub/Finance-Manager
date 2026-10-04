@@ -12,13 +12,12 @@ export interface ParsedBankAlert {
 // Known merchant pattern dictionary
 export const MERCHANT_CATEGORY_MAP: { pattern: RegExp; category: string; formattedName: string }[] = [
   // Subscriptions & Tech
-  { pattern: /open\s*ai|chat\s*gpt/i, category: "Subscriptions", formattedName: "OpenAI" },
   { pattern: /spotify/i, category: "Subscriptions", formattedName: "Spotify" },
   { pattern: /netflix/i, category: "Subscriptions", formattedName: "Netflix" },
   { pattern: /youtube/i, category: "Subscriptions", formattedName: "YouTube Premium" },
   { pattern: /google\s*(one|storage|play)/i, category: "Subscriptions", formattedName: "Google One" },
   { pattern: /apple|icloud/i, category: "Subscriptions", formattedName: "Apple Services" },
-  { pattern: /cursor|github|copilot/i, category: "Subscriptions", formattedName: "GitHub / Developer Tool" },
+  { pattern: /github|jetbrains/i, category: "Subscriptions", formattedName: "GitHub / Developer Tool" },
 
   // Transport & Fuel
   { pattern: /careem/i, category: "Transport", formattedName: "Careem" },
@@ -128,7 +127,7 @@ export function parseBankAlert(text: string): ParsedBankAlert {
   }
 
   // Extract merchant
-  // Matches: "at OPENAI", "to OPENAI", "paid at OPENAI", "for OPENAI"
+  // Matches: "at NETFLIX", "to NETFLIX", "paid at NETFLIX", "for NETFLIX"
   let merchantCandidate = ""
   const merchantMatch =
     text.match(/(?:at|to|towards|for)\s+([A-Za-z0-9\s&.-]+?)(?:\s+(?:on|from|using|via|fee|balance|ref|trx|tid|with|\.))/i) ||
@@ -159,7 +158,7 @@ export const SAMPLE_SMS_TEMPLATES = [
     id: "easypaisa",
     label: "Easypaisa (3737)",
     provider: "EASYPAISA",
-    text: "You have paid Rs. 5,600.00 to OPENAI from Mobile Account 03001234567. Balance: Rs. 14,200.00. Trans ID: 1234567890",
+    text: "You have paid Rs. 5,600.00 to NETFLIX from Mobile Account 03001234567. Balance: Rs. 14,200.00. Trans ID: 1234567890",
   },
   {
     id: "jazzcash",
@@ -171,7 +170,7 @@ export const SAMPLE_SMS_TEMPLATES = [
     id: "meezan",
     label: "Meezan Bank Card",
     provider: "MEEZAN_BANK",
-    text: "Paid Rs. 5,600.00 at OPENAI using Meezan Visa Debit Card ending 4242 on 06-09-2026. Available Balance: PKR 88,400.00",
+    text: "Paid Rs. 5,600.00 at NETFLIX using Meezan Visa Debit Card ending 4242 on 06-09-2026. Available Balance: PKR 88,400.00",
   },
   {
     id: "sadapay",
