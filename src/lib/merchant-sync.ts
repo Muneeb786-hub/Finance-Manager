@@ -31,6 +31,11 @@ export const MERCHANT_CATEGORY_MAP: { pattern: RegExp; category: string; formatt
   { pattern: /mcdonald/i, category: "Food", formattedName: "McDonald's" },
   { pattern: /kfc/i, category: "Food", formattedName: "KFC" },
   { pattern: /subway|domino|pizza\s*hut/i, category: "Food", formattedName: "Fast Food Restaurant" },
+  { pattern: /imtiaz/i, category: "Food", formattedName: "Imtiaz Supermarket" },
+  { pattern: /carrefour/i, category: "Food", formattedName: "Carrefour" },
+  { pattern: /al[\s-]?fatah/i, category: "Food", formattedName: "Al-Fatah" },
+  { pattern: /chase\s*up/i, category: "Food", formattedName: "Chase Up" },
+  { pattern: /metro\s*(cash|store|wholesale)/i, category: "Food", formattedName: "Metro" },
 
   // Utilities & Bills
   { pattern: /k-?electric|kelectric/i, category: "Bills", formattedName: "K-Electric Bill" },

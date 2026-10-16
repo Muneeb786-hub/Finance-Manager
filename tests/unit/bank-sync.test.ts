@@ -77,5 +77,13 @@ describe('Bank & Card Transaction Alert Parser', () => {
     expect(detectMerchantAndCategory('SNGPL BILL').category).toBe('Bills');
     expect(detectMerchantAndCategory('DARAZ PK').category).toBe('Shopping');
   });
+
+  it('maps local supermarkets to Food', () => {
+    expect(detectMerchantAndCategory('IMTIAZ SUPER MARKET').merchant).toBe('Imtiaz Supermarket');
+    expect(detectMerchantAndCategory('CARREFOUR LHR').category).toBe('Food');
+    expect(detectMerchantAndCategory('AL FATAH').category).toBe('Food');
+    expect(detectMerchantAndCategory('AL-FATAH GULBERG').category).toBe('Food');
+    expect(detectMerchantAndCategory('CHASE UP').category).toBe('Food');
+  });
 });
 
